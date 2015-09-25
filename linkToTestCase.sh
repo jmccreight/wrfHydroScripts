@@ -1,17 +1,35 @@
 #!/bin/bash
 
-## Purpose: to "duplicate" via symlinks someone else's (you dont have 
-## permission in their run dir) WRF-Hydro test case. You want all their 
-## dependencies as specified in their namelists (and really nothing more)
-## and all the run dependencies (namelists and *TBL files).
+help='
 
-## Arguments:
-## takes a single argument, the name of the test you want to link to relative to $testDir
-inDir=$1
-## Parameters:
-## these two could be taken as arguments eventually:
-testDir=/d2/weiyu/TESTING/$inDir
-myTestDir=/d6/jamesmcc/WRF_Hydro/TESTING/Wei/$inDir
+linkToTestCase.sh :: help
+
+Purpose: to "duplicate" via symlinks someone elses (you dont have 
+permission in their run dir) WRF-Hydro test case. You want all their 
+dependencies as specified in their namelists (and really nothing more)
+and all the run dependencies (namelists and *TBL files).
+
+Arguments:
+ 1) ($test) The name of the test you want to link to relative to $rootDir, could be 
+     several directories deep, e.g. testFOO/fooBAR
+ 2) The test directory, $testDir, where the source test lives, 
+     e.g. /home/someTester/TESTS then the tests from 1 would be
+     /home/someTester/TESTS/testFOO/fooBAR
+ 3) "myTestDir"  the directory into which the test is to be "copied",
+     e.g. /home/myself/TESTS/specialTest the above examples would result in
+     /home/myself/TESTS/specialTest/testFOO/fooBAR
+'
+
+if [ -z "$1" ] | [ -z "$2" ] | [ -z "$3" ]; then echo -e "Argument(s) missing. $help"; exit 1; fi
+test=$1
+testDir=$2
+myTestDir=$3
+
+sourceDir=$testDir/$test
+targetDir=$myTestDir/$test
+
+echo -e "Source: $sourceDir"
+echo -e "Target:  $targetDir"
 
 ## Remember in bash: TRUE=0, FALSE=1, unless you're using (( ))
 function checkExist {
@@ -23,22 +41,24 @@ function notCommented {
     if [[ $noBlank == !* ]]; then return 1; else return 0; fi
 }
 
-checkExist $testDir || exit 1
-checkExist $testDir/hydro.namelist || exit 1
+checkExist $sourceDir
+[ $? ] || exit 1
+checkExist $sourceDir/hydro.namelist
+[ $? ] || exit 1
 
-if [ ! -d $myTestDir ] 
+if [ ! -d $targetDir ] 
 then
-    mkdir -p $myTestDir
-    echo -e "\e[7mCreating my test directory:\e[0m \e[94m$myTestDir\e[0m"
+    mkdir -p $targetDir
+    echo -e "\e[7mCreating my test directory:\e[0m \e[94m$targetDir\e[0m"
 else
-    echo -e "\e[7mMy test directory\e[0m \e[94m$myTestDir\e[0m \e[7malready exists, updating.\e[0m"
+    echo -e "\e[7mMy test directory\e[0m \e[94m$targetDir\e[0m \e[7malready exists, updating.\e[0m"
 fi
 
 # these things have to be in the run directory
 echo -e "\e[7mRun Directory Files:\e[0m"
-TBLS=`ls $testDir/*TBL`
-namelists=`ls $testDir/namelist.hrldas $testDir/hydro.namelist`
-cd $myTestDir
+TBLS=`ls $sourceDir/*TBL`
+namelists=`ls $sourceDir/namelist.hrldas $sourceDir/hydro.namelist`
+cd $targetDir
 for ii in $namelists $TBLS
 do
     ln -sf $ii .
@@ -47,7 +67,7 @@ done
 
 function linkReqFiles {
     file=$1
-    cd $testDir
+    cd $sourceDir
     if [[ ! -e $file ]]
     then 
         echo "No such file: $file"
@@ -60,7 +80,7 @@ function linkReqFiles {
     for ii in $namesInFile
     do
         IFS=$'\n'
-        cd $testDir
+        cd $sourceDir
         theLines=`grep -i $ii $file`
         for jj in $theLines
         do
@@ -72,15 +92,15 @@ function linkReqFiles {
             thePath=`dirname $pathFile`
             theFile=`basename $pathFile`
             echo -e "\e[94m$pathFile\e[0m"
-            cd $testDir
+            cd $sourceDir
             cd $thePath
-            if [[ ! -d $myTestDir/$thePath ]]; then mkdir -p $myTestDir/$thePath; fi
+            if [[ ! -d $targetDir/$thePath ]]; then mkdir -p $targetDir/$thePath; fi
             ## if the file is just '.' the current directory, dont do anything once the dir is made
             if [[ "$theFile" == "." ]]; then continue; fi
             ## remove symlinks before replacing them, esp for directories
-            if [[ -h $myTestDir/$thePath/$theFile ]]; then rm $myTestDir/$thePath/$theFile; fi
-            ln -s $testDir/$thePath/$theFile $myTestDir/$thePath/$theFile
-            ls -l $myTestDir/$thePath/$theFile
+            if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
+            ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+            ls -l $targetDir/$thePath/$theFile
         done
     done
     return 0
