@@ -9,6 +9,13 @@ permission in their run dir) WRF-Hydro test case. You want all their
 dependencies as specified in their namelists (and really nothing more)
 and all the run dependencies (namelists and *TBL files).
 
+Options:
+ -c Copy instead of link. Useful when you want to extract/establish a test case 
+    from an existing directory where other stuff may live.
+ -n Get nudging files. 
+ -p write protect the results.
+ -f un-write protect and clobber write protected files
+
 Arguments:
  1) ($test) The name of the test you want to link to relative to $rootDir, could be 
      several directories deep, e.g. testFOO/fooBAR
@@ -20,17 +27,63 @@ Arguments:
      /home/myself/TESTS/specialTest/testFOO/fooBAR
 '
 
+## TODO: allow relative paths?
+
+## NOTES:
+## NOTE WELL
+## cp has to be one of the starngest commands in the liberties it takes with permissions: 
+##   1) cp --remove-destination disrepsects permissions! so write this.
+##   2) you can cp -r OVER a write protected dir, you cant normally touch files in a wp dir.
+
+
+###################################
+## OPTIONS
+# Defaults first
+linkOrCopy='link'  
+getNudgingFiles=1
+writeProtect=1
+unWriteProtect=1
+while getopts ":ucnp" opt; do
+  case $opt in
+    u)
+      echo -e "\e[41mUN-Write protecting files.\e[0m"
+      echo -e "\e[41mDo you want to do this? Enter 'yes' to continue:\e[0m"
+      read unProtectQuery
+      if [[ ! $unProtectQuery == "yes" ]]
+      then 
+          echo 'You did not answer "yes", aborting.'
+          exit 1
+      fi
+      unWriteProtect=0
+      ;;
+    c)
+      echo -e "\e[46mCopying files instead of linking.\e[0m"
+      linkOrCopy='copy'
+      ;;
+    n)
+      echo -e "\e[46mGetting nudging files.\e[0m"
+      getNudgingFiles=0
+      ;;
+    p)
+      echo -e "\e[101mWrite protecting files.\e[0m"
+      writeProtect=0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+shift "$((OPTIND-1))" # Shift off the options and optional
+
+###################################
+## ARGUMENTS
 if [ -z "$1" ] | [ -z "$2" ] | [ -z "$3" ]; then echo -e "Argument(s) missing. $help"; exit 1; fi
 test=$1
 testDir=$2
 myTestDir=$3
 
-sourceDir=$testDir/$test
-targetDir=$myTestDir/$test
-
-echo -e "Source: $sourceDir"
-echo -e "Target:  $targetDir"
-
+###################################
+## helpers
 ## Remember in bash: TRUE=0, FALSE=1, unless you're using (( ))
 function checkExist {
     if [ ! -e $1 ]; then echo $1 does not exist. ; return 1; else return 0; fi
@@ -40,6 +93,14 @@ function notCommented {
     noBlank=`echo $1 | tr -d ' '`
     if [[ $noBlank == !* ]]; then return 1; else return 0; fi
 }
+
+###################################
+## setup and basic checks
+sourceDir=$testDir/$test
+targetDir=$myTestDir/$test
+
+echo -e "Source: $sourceDir"
+echo -e "Target:  $targetDir"
 
 checkExist $sourceDir
 [ $? ] || exit 1
@@ -54,17 +115,52 @@ else
     echo -e "\e[7mMy test directory\e[0m \e[94m$targetDir\e[0m \e[7malready exists, updating.\e[0m"
 fi
 
+###################################
+## Run dir stuff
 # these things have to be in the run directory
 echo -e "\e[7mRun Directory Files:\e[0m"
-TBLS=`ls $sourceDir/*TBL`
-namelists=`ls $sourceDir/namelist.hrldas $sourceDir/hydro.namelist`
+TBLS=`ls --color=auto $sourceDir/*TBL`
+namelists=`ls --color=auto $sourceDir/namelist.hrldas $sourceDir/hydro.namelist`
+if [[ $"getNudgingFiles" -eq 0 ]]
+then
+    nudgeFiles=`ls -d $sourceDir/nudgingTimeSliceObs $sourceDir/nudgingParams.nc`
+    ## This one is definitely going to move into namelist and evnetually get picked up in the 
+    ## next section
+    nudgeFiles="$nudgeFiles "`ls -d $sourceDir/netwkReExFile.nc`
+else 
+    nudgeFiles=''
+fi
+echo $namesInFile
+
 cd $targetDir
-for ii in $namelists $TBLS
+for ii in $namelists $TBLS $nudgeFiles
 do
-    ln -sf $ii .
-    ls -l `basename $ii`
+    theSource=$ii
+    #since all targets go in targetDir
+    theTarget=`basename $ii`  
+    if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $theTarget; fi
+    if [[ $linkOrCopy == 'link' ]]
+    then
+        ln -sf $theSource .
+    else 
+        if [[ -d $theSource ]] ## directory
+        then
+            ## cp --remove-destination disrepsects permissions! so write this.
+            if [[ -h $theTarget ]]; then rm -r $theTarget; fi  ## if symlink 
+            cp -rH $theSource .
+        else
+            if [[ -h $theTarget ]]; then rm $theTarget; fi  ## if symlink
+            cp -H $theSource .
+        fi
+    fi
+    if [[ $writeProtect -eq 0 ]]; then chmod 555 $theTarget; fi
+    ## why in god's name you can cp -r OVER a write protected dir, i do not know.
+    if [[ -d $theSource ]]; then chmod 555 $theTarget/*; fi
+    ls -dl --color=auto $theTarget
 done
 
+###################################
+## function to get things referenced in namelists
 function linkReqFiles {
     file=$1
     cd $sourceDir
@@ -97,15 +193,26 @@ function linkReqFiles {
             if [[ ! -d $targetDir/$thePath ]]; then mkdir -p $targetDir/$thePath; fi
             ## if the file is just '.' the current directory, dont do anything once the dir is made
             if [[ "$theFile" == "." ]]; then continue; fi
-            ## remove symlinks before replacing them, esp for directories
-            if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
-            ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
-            ls -l $targetDir/$thePath/$theFile
+            if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $targetDir/$thePath/$theFile; fi
+            if [[ $linkOrCopy == 'link' ]] 
+            then
+                ## remove symlinks before replacing them, esp for directories
+                if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
+                ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+            else 
+                ## cp --remove-destination is BAD, disrespects permissions
+                if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
+                cp -rH $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+            fi
+            if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/$thePath/$theFile; fi
+            ls -dl --color=auto $targetDir/$thePath/$theFile
         done
     done
     return 0
 }
 
+###################################
+## call the function
 echo -e "\e[7mFiles specified in the namelist files:\e[0m"
 ## hrldas
 linkReqFiles namelist.hrldas
