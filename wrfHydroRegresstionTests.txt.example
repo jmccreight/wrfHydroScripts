@@ -1,0 +1,6 @@
+## copy this file to ~/.wrfHydroRegressionTests.txt and add enumerated test cases.
+
+attemptDir = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/ATTEMPTS
+
+
+1: Boulder Creek NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD

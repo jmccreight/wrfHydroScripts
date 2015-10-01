@@ -17,12 +17,12 @@ Options:
  -f un-write protect and clobber write protected files
 
 Arguments:
- 1) ($test) The name of the test you want to link to relative to $rootDir, could be 
+ 1) ($test) The name of the test you want to link to relative to $testDir, could be 
      several directories deep, e.g. testFOO/fooBAR
  2) The test directory, $testDir, where the source test lives, 
      e.g. /home/someTester/TESTS then the tests from 1 would be
      /home/someTester/TESTS/testFOO/fooBAR
- 3) "myTestDir"  the directory into which the test is to be "copied",
+ 3) "$myTestDir"  the directory into which the test is to be "copied",
      e.g. /home/myself/TESTS/specialTest the above examples would result in
      /home/myself/TESTS/specialTest/testFOO/fooBAR
 '
@@ -35,6 +35,8 @@ Arguments:
 ##   1) cp --remove-destination disrepsects permissions! so write this.
 ##   2) you can cp -r OVER a write protected dir, you cant normally touch files in a wp dir.
 
+## bring in some functions
+~jamesmcc/wrfHydroScripts/helpers.sh
 
 ###################################
 ## OPTIONS
@@ -83,18 +85,6 @@ testDir=$2
 myTestDir=$3
 
 ###################################
-## helpers
-## Remember in bash: TRUE=0, FALSE=1, unless you're using (( ))
-function checkExist {
-    if [ ! -e $1 ]; then echo $1 does not exist. ; return 1; else return 0; fi
-}
-
-function notCommented {
-    noBlank=`echo $1 | tr -d ' '`
-    if [[ $noBlank == !* ]]; then return 1; else return 0; fi
-}
-
-###################################
 ## setup and basic checks
 sourceDir=$testDir/$test
 targetDir=$myTestDir/$test
@@ -131,6 +121,9 @@ else
     nudgeFiles=''
 fi
 echo $namesInFile
+
+if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $targetDir/; fi
+if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $targetDir/*; fi
 
 cd $targetDir
 for ii in $namelists $TBLS $nudgeFiles
@@ -218,6 +211,9 @@ echo -e "\e[7mFiles specified in the namelist files:\e[0m"
 linkReqFiles namelist.hrldas
 # hydro.namelist
 linkReqFiles hydro.namelist
+
+if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/*; fi
+if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/; fi
 
 exit 0
 

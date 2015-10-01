@@ -62,6 +62,11 @@ numProc=`nproc`
 numProc=`echo "$numProc/2" | bc`
 
 useIfort=`ldd wrf_hydro.exe | grep ifort | wc -l`
+if [ ! $? -eq 0 ] 
+then
+    echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
+    exit 1
+fi
 if [ "$useIfort" -gt 0 ] 
 then
     MPIRUN=/opt/openmpi-1.10.0-intel/bin/mpirun
@@ -92,7 +97,15 @@ fi
 if [ ! -z "$2" ]
 then
     runDir=$2
-    if [ ! -d $runDir ]; then  mkdir -p $runDir; fi
+    if [ ! -d $runDir ]
+    then  
+        mkdir -p $runDir
+        if [ ! $? -eq 0 ]
+        then 
+            echo -e "\e[31mProblems creating run dir:\e[0m $runDir"
+            exit 1
+        fi
+    fi
     ~jamesmcc/wrfHydroScripts/linkToTestCase.sh \
         $cOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
     origDir=`pwd`

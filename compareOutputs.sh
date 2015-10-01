@@ -1,21 +1,22 @@
 #!/bin/bash
 ## Purpose: Compare the output from two WRF-Hydro runs for differences. 
 
-## Arguments
-## 1) first argument is how many of each file to compare going backwards from the last one.
-## 2) OPTIONAL second argument is the path to the verification data. if in a run direcory with 
-##             namelist.hrldas, the output dir is used.
-## 3) OPTIONAL but need 2 if you use 3: third argument is the path to your output, if missing 
-##             assuming you're in the run or ouput directory directory.
+help="
+Arguments
+1) first argument is how many of each file to compare going backwards from the last one.
+2) OPTIONAL second argument is the path to the verification data. 
+3) OPTIONAL but need 2 if you use 3: third argument is the path to your output, if missing 
+            assuming you're in the run or ouput directory.
+"
 
 ## Dependency on this file, in case you change computers.
 source ~jamesmcc/ncScripts/ncFilters.sh
-
+source ~jamesmcc/wrfHydroScripts/helpers.sh
 
 nLast=$1
 if [[ ! $nLast =~ ^-?[0-9]+$ ]]
 then
-    echo -e "\e[31mPlease supply a valid integer for the firt argument 'nLast'\e[0m".
+    echo -e "\e[31mPlease supply a valid integer for the firt argument 'nLast'\e[0m $help".
     exit 1
 fi
 
@@ -27,14 +28,14 @@ then
     nlstOutDir=`echo $nlstOutDir | cut -d'=' -f2 | tr -d "'" | tr -d '"'`
     origRunOutDir=$origRunDir/$nlstOutDir
 else
-    origRunOutDir=$2
+    origRunOutDir=`getAbsPath $2`
 fi
 
 if [ -z "$3" ]
 then
     myRunOutDir=`pwd`
 else
-    myRunOutDir=$3
+    myRunOutDir=`getAbsPath $3`
     cd $myRunOutDir
 fi
 
@@ -54,6 +55,8 @@ echo "The WRF-Hydro file kinds to be compared (you may want to add others):"
 echo ${fileWilds[*]}
 echo ""
 
+accRetDiffs=0
+
 for ll in `seq $nLast -1 1`
 do
     echo -e "\e[46mThe $((ll-1)) before last file of this kind:\e[0m"
@@ -72,8 +75,10 @@ do
         echo -e "\e[7m $theFile \e[0m"
         echo -e "\e[34mncVarDiff $myRunOutDir/$theFile $origRunOutDir/$theFile\e[0m"
         diffOut=`ncVarDiff $myRunOutDir/$theFile $origRunOutDir/$theFile 2>&1`
+        retDiff=$?
+        accRetDiff=$(($accRetDiff+$retDiff))
         echo -e "\e[31m$diffOut\e[0m"
     done
 done
 
-exit 0
+exit $accRetDiff
