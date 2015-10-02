@@ -36,7 +36,7 @@ Arguments:
 ##   2) you can cp -r OVER a write protected dir, you cant normally touch files in a wp dir.
 
 ## bring in some functions
-~jamesmcc/wrfHydroScripts/helpers.sh
+source ~jamesmcc/wrfHydroScripts/helpers.sh
 
 ###################################
 ## OPTIONS

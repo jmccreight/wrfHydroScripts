@@ -32,6 +32,8 @@ Running a regression test: involves the following steps
 4) Compares the output to VERIFICATION in the run directory,
 5) optionally cleans up on success.
 
+Maybe some day well have autmoatic/continuous integrations:
+https://github.com/integrations/feature/build
 '
 ##future arguments
 ## # of last outputs to compare passed to compareOutputs.
