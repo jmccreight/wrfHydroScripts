@@ -3,13 +3,14 @@
 ## arguments are
 ## 1: path: defaults to paste0(getwd(),'/frxst_pts_out.txt')
 
+options(warn=1)
 args <- commandArgs(TRUE)
 ## arg 1: huc
 path <- args[1]
 if(is.na(path)) path <- paste0(getwd(),'/frxst_pts_out.txt')
 if(dir.exists(path)) path <- paste0(path,'/frxst_pts_out.txt')
 print(path)
-outFile <- 'frxst_pts_PLOT.png'
+outFile <- paste0(dirname(path),'/frxst_pts_PLOT.png')
 
 if(file.exists(path)) {
     suppressPackageStartupMessages(library(rwrfhydro))

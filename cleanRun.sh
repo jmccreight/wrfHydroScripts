@@ -1,6 +1,6 @@
 #!/bin/bash
 
-help='
+help="
 
 cleanRun.sh :: help
 
@@ -23,12 +23,13 @@ Arguments:
       by symlinking ../dep to ./dep. The intent of creating run 
       directories here is so that multiple runs can be happening 
       simultaneously for the same domain.
+  3) OPTIONAL The binary to use, will be copied to run directory.
 
 Note:
 There is a special section to detect the correct build of mpi, 
  which is likely to cause others issues at some point. 
 
-'
+"
 
 
 ## options are just passed to linkToTestCase.sh 
@@ -58,22 +59,10 @@ while getopts ":ucnp" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional
 
+whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+
 numProc=`nproc`
 numProc=`echo "$numProc/2" | bc`
-
-useIfort=`ldd wrf_hydro.exe | grep ifort | wc -l`
-if [ ! $? -eq 0 ] 
-then
-    echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
-    exit 1
-fi
-if [ "$useIfort" -gt 0 ] 
-then
-    MPIRUN=/opt/openmpi-1.10.0-intel/bin/mpirun
-else
-    MPIRUN=mpirun
-fi
-
 
 ## first argument is required: the number of mpi tasks
 if [ ! -z "$1" ]
@@ -88,15 +77,44 @@ then
         exit 1
     fi
 else 
-    echo "Please specify the number of mpi tasks mpirun"
-    echo $help
+    echo "Please specify the number of mpi tasks mpirun. $help"
     exit 1
 fi
 
-## second argument is optional: a run directory
+## second and third arguments are optional: a run directory and/or a binary
+## set a default (rather than complicated logic)
+theBinary=wrf_hydro.exe
+rundir=''
 if [ ! -z "$2" ]
 then
-    runDir=$2
+    ## was there a binary passed? Which argument?
+    checkBinary=`ldd $2`
+    if [ $? -eq 0 ] 
+    then
+        ## the second argument is the binary
+        theBinary=$2
+        if [ ! -z "$3" ]; then runDir=$3; fi
+    else 
+        ## if there's a third argument
+        if [ ! -z "$3" ]    
+        then 
+            checkBinary=`ldd $3`
+            if [ $? -eq 0 ]
+            then 
+                theBinary=$3 
+            else
+                echo -e "\e[31mNeither argument 2 nor 3 is a valid binary. Please check."
+                exit 1
+            fi
+            runDir=$2
+        fi
+    fi
+fi  
+
+                   
+## now deal with the run directory 
+if [ ! -z $runDir ] 
+then
     if [ ! -d $runDir ]
     then  
         mkdir -p $runDir
@@ -106,21 +124,34 @@ then
             exit 1
         fi
     fi
-    ~jamesmcc/wrfHydroScripts/linkToTestCase.sh \
+    ## setup the new run directory
+    $whsPath/linkToTestCase.sh \
         $cOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
     origDir=`pwd`
     cd $runDir
-    if [ "$cOpt" == "-c" ]
-    then
-        cp $origDir/wrf_hydro.exe .
-    else
-        ln -sf $origDir/wrf_hydro.exe .
-    fi
+    ## always copy the binary
+    cp $origDir/$theBinary .
 fi
 
-~jamesmcc/wrfHydroScripts/cleanup.sh
+## clean up the run directory
+$whsPath/cleanup.sh
 
-$MPIRUN -np $nMpiTasks ./wrf_hydro.exe
+## a check for the ifort versus the pg compiler
+useIfort=`ldd $theBinary | grep ifort | wc -l`
+if [ ! $? -eq 0 ] 
+then
+    echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
+    exit 1
+fi
+if [ "$useIfort" -gt 0 ] 
+then
+    echo -e "\e[31mDetected intel fortran binary\e[0m"
+    MPIRUN=/opt/openmpi-1.10.0-intel/bin/mpirun
+else
+    MPIRUN=mpirun
+fi
+    
+$MPIRUN -np $nMpiTasks ./$theBinary
 mpiReturn=$?
 echo -e "\e[36mReturn code: $mpiReturn\e[0m"
 exit $mpiReturn

@@ -15,6 +15,3 @@ function getAbsPath {
     if [[ ! "$1" = /* ]]; then echo `pwd`/$1; else echo $1; fi
 }
 
-function henv {
-    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort)" | egrep -v PWD
-}

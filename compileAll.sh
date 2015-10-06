@@ -14,7 +14,9 @@ else
     fi
 fi
 
-source ~jamesmcc/wrfHydroScripts/helpers.sh
+whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+source $whsPath/helpers.sh
+source $whsPath/sourceMe.sh
 
 function errGrep { 
     grep -i 'error' $1 &> /dev/null; return $((!$?)) 
@@ -41,13 +43,14 @@ cd ~/WRF_Hydro/wrf_hydro_model/trunk/NDHMS/
 theBranch=`git branch | grep '*' | tr -d "*" | tr -d ' '`
 echo $theBranch
 export WRF_HYDRO=1
+export HYDRO_REALTIME=0
 
-if [ $theBranch == "daBranch" ]
+if [ $theBranch == "daBranch" ] | [ $theBranch == "newDa" ] 
 then
     echo "Compiling daBranch"
 
     echo
-    echo -e "\e[7;41;34mnoNudging\e[0m"
+    echo -e "\e[7;47;39mnoNudging\e[0m"
     export PRECIP_DOUBLE=0
     export WRF_HYDRO_NUDGING=0
     cleanCompile
@@ -55,7 +58,7 @@ then
     ls -lah --color=auto Run/wrf_hydro.noNudging.exe
 
     echo
-    echo -e "\e[7;41;34mnoNudging_doublePrecip\e[0m"
+    echo -e "\e[7;47;39mnoNudging_doublePrecip\e[0m"
     export PRECIP_DOUBLE=1
     export WRF_HYDRO_NUDGING=0
     cleanCompile
@@ -63,13 +66,25 @@ then
     ls -lah --color=auto Run/wrf_hydro.noNudging_doublePrecip.exe
 
     echo
-    echo -e "\e[7;41;34mnudging\e[0m"
+    echo -e "\e[7;47;39mnudging\e[0m"
     export PRECIP_DOUBLE=0
     export WRF_HYDRO_NUDGING=1
     cleanCompile
     cp Run/wrf_hydro.exe Run/wrf_hydro.nudging.exe    
     ls -lah --color=auto Run/wrf_hydro.nudging.exe
 
+fi
+
+if [ $theBranch == "master" ]
+then
+    echo "Compiling master"
+
+    echo
+    export PRECIP_DOUBLE=0
+    export WRF_HYDRO_NUDGING=0
+    cleanCompile
+    cp Run/wrf_hydro.exe Run/wrf_hydro.master.exe
+    ls -lah --color=auto Run/wrf_hydro.master.exe
 fi
 
 exit 0

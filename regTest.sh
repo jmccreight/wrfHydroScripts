@@ -21,8 +21,8 @@ The regression test directories also contaion a special VERIFICATION directory *
 DIRECTORY*. The binary and all the model ouput are located in VERIFICATION/. Old version can 
 be back-dated, e.g. VERIFICATION.yyyymmdd or removed.
 
-Number of cores used is equal to the number of hydro_diag.* files in the VERIFICATION 
-directory.
+Number of cores used in a regression test is equal to the number of hydro_diag.* files in 
+the VERIFICATION directory.
 
 Running a regression test: involves the following steps
 0) Creation of an enclosing directory named after the regression test, the binary, and the date.
@@ -35,8 +35,24 @@ Running a regression test: involves the following steps
 Maybe some day well have autmoatic/continuous integrations:
 https://github.com/integrations/feature/build
 '
+
 ##future arguments
 ## # of last outputs to compare passed to compareOutputs.
+
+cleanRunScript=cleanRun.sh
+while getopts ":q" opt; do
+  case $opt in
+    q)
+      cleanRunScript=qCleanRun.sh
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+shift "$((OPTIND-1))" # Shift off the options and optional
+
+whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
 
 ## First check for ~/.wrfHydroRegressionTests.txt
 configFile=~/.wrfHydroRegressionTests.txt
@@ -68,17 +84,30 @@ if [ -z $2 ]
 then 
     ## if no test specified, let user choose between canned options in configFile
     echo -e "\e[7;44;97mPlease select a test case by number (0 to quit):\e[0m"
-    echo -e "\e[96m `egrep '[1-9]*:' $configFile` \e[0m"
-    read caseNum
-    echo $caseNum
-    ## pull that case out of the config file
-    testDir=`egrep "$caseNum.*:" $configFile | cut -d'=' -f2 | tr -d ' '`
+    echo -e "\e[96m`egrep '[1-9]*:' $configFile` \e[0m"
+    testDir=''
+    while [ -z $testDir ] 
+    do
+        read caseNum
+        if [[ ! $caseNum =~ ^-?[0-9]+$ ]]; then continue; fi
+        ## pull that case out of the config file
+        testDir=`egrep "$caseNum.*:" $configFile | cut -d'=' -f2 | tr -d ' '`
+    done 
 else
     testDir=$2
     ## if an integer, use it to select a canned test case from configFile
     if [[ $testDir =~ ^-?[0-9]+$ ]]    
     then
         testDir=`egrep "$testDir.*:" $configFile | cut -d'=' -f2 | tr -d ' '`
+        if [ -z $testDir ]
+        then
+            echo -e "\e[31mPassed test case number did not successfully select a test case.\e[0m"
+            echo -e "\e[31mPlease review your test case configu filee and help below:.\e[0m"
+            cat $configFile
+            echo "$help"
+            exit 1
+        fi
+
     fi
 fi
 
@@ -93,7 +122,13 @@ then
     exit 1
 else 
     ## if it exists find the first hydro.namelist as the actual run directory
-    testRunDir=`find $testDir -name 'hydro.namelist'`
+    testRunDir=`find $testDir -name 'hydro.namelist' | grep -v VERIFICATION`
+    nRunDir=`echo "$testRunDir" | wc -l`
+    if [[ $nRunDir -gt 1 ]]
+    then
+        echo -e "\e[31mMore than one run directory detected. Run directory in regression tests is identified by a unique hydro.namelist in a directory below the regression test. Please fix.\e[0m"
+        exit 1
+    fi
     testRunDir=`dirname $testRunDir`
 fi
 
@@ -117,7 +152,13 @@ echo -e "The attempt run directory: $attemptRunDir"
 echo
 echo -e "\e[7;44;97mLinking\e[0m"
 linkTest=`echo $testRunDir | tr -d ' ' | cut -c$((${#testDir}+2))-`
-~jamesmcc/wrfHydroScripts/linkToTestCase.sh $linkTest $testDir $attemptDir
+$whsPath/linkToTestCase.sh $linkTest $testDir $attemptDir
+if [ ! $? -eq 0 ] 
+then
+    echo -e "\e[31mLinking failed, please investigate.\e[0m"
+    exit 1
+fi
+
 ## link the binary
 ln -s $theBinary $attemptRunDir/.
 cd $attemptRunDir
@@ -126,18 +167,38 @@ ln -s `basename $theBinary` wrf_hydro.exe
 ## run the model
 echo
 echo -e "\e[7;44;97mRun the model, using $nCores cores.\e[0m"
-~jamesmcc/wrfHydroScripts/cleanRun.sh $nCores
-modelSuccess=$?
+if [ cleanRunScript == cleanRun.sh ]
+then
+    $whsPath/$cleanRunScript $nCores
+    modelSuccess=$?
+else
+    ## else job was submitted to qsub
+    qJobId=`$whsPath/$cleanRunScript $nCores`
+    qJobId=`echo $qJobId | cut -d '.' -f 1`
+echo $qJobId
+    ## That's so easy! (NOT)
+    qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
+    while [ $qJobStatus == R ]
+    do
+        qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
+        sleep 20
+    done
+    qTrace=`tracejob $qJobId 2> /dev/null`
+    ## certainly not easy to pars stuff coming out of torque... 
+    modelSuccess=`echo "$qTrace" | grep 'Exit_status' | head -1 | sed 's/ \+/\n/g' | grep 'Exit_status' | cut -d '=' -f2`
+fi
+
 if [[ ! $modelSuccess -eq 0 ]] 
 then
     echo -e "\e[31mModel failed. Please investigate.\e[0m"
     exit $modelSuccess
 fi
 
+
 ## compare the output
 ## what if OUPUT dir is specified by the namelist.hrldas?
 echo -e "\e[7;44;97mOutput comparison:\e[0m"
-~jamesmcc/wrfHydroScripts/compareOutputs.sh 1 $testRunDir/VERIFICATION 
+$whsPath/compareOutputs.sh 1 $testRunDir/VERIFICATION 
 retComp=$?
 
 echo -e "\e[7;44;97mOutput comparison results:\e[0m"

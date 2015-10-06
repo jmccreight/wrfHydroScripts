@@ -36,7 +36,8 @@ Arguments:
 ##   2) you can cp -r OVER a write protected dir, you cant normally touch files in a wp dir.
 
 ## bring in some functions
-source ~jamesmcc/wrfHydroScripts/helpers.sh
+whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+source $whsPath/helpers.sh
 
 ###################################
 ## OPTIONS
@@ -81,8 +82,8 @@ shift "$((OPTIND-1))" # Shift off the options and optional
 ## ARGUMENTS
 if [ -z "$1" ] | [ -z "$2" ] | [ -z "$3" ]; then echo -e "Argument(s) missing. $help"; exit 1; fi
 test=$1
-testDir=$2
-myTestDir=$3
+testDir=`getAbsPath $2`
+myTestDir=`getAbsPath $3`
 
 ###################################
 ## setup and basic checks
