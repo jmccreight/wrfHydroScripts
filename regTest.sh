@@ -38,6 +38,9 @@ https://github.com/integrations/feature/build
 
 ##future arguments
 ## # of last outputs to compare passed to testNLast.sh.
+## # of processors to use instead of default
+## set of tests to specify.
+## set of ouput files to check/test on
 
 cleanRunScript=cleanRun.sh
 while getopts ":q" opt; do
@@ -62,9 +65,7 @@ checkExist $configFile || exit 1
 ## Argument 1
 theBinary=$1
 checkBinary $theBinary || exit 1
-
 theBinary=`getAbsPath $theBinary`
-if [[ `dirname $theBinary` == '.' ]];then theBinary=`pwd`/$theBinary; fi
 
 ## Argument 2: optional path to test dir
 regTestMenu=`getMenu $configFile 'Regression Tests Menu'`
@@ -164,10 +165,9 @@ else
     ## else job was submitted to qsub
     qJobId=`$whsPath/$cleanRunScript $nCores`
     qJobId=`echo $qJobId | cut -d '.' -f 1`
-echo $qJobId
+    echo $qJobId
     ## That's so easy! (NOT)
     qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
-echo $qJobStatus
     while [[ ! $qJobStatus == C ]]  
     do
         qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
