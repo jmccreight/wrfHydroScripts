@@ -156,7 +156,7 @@ ln -s `basename $theBinary` wrf_hydro.exe
 ## run the model
 echo
 echo -e "\e[7;44;97mRun the model, using $nCores cores.\e[0m"
-if [ $cleanRunScript == cleanRun.sh ]
+if [[ $cleanRunScript == cleanRun.sh ]]
 then
     $whsPath/$cleanRunScript $nCores
     modelSuccess=$?
@@ -167,7 +167,8 @@ else
 echo $qJobId
     ## That's so easy! (NOT)
     qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
-    while [ $qJobStatus == R ]
+echo $qJobStatus
+    while [[ ! $qJobStatus == C ]]  
     do
         qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
         sleep 20
