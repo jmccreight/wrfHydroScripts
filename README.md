@@ -14,7 +14,53 @@ the full paths to the script files to call them)
 
 Note this is a work in progress.  
 
-Commands are listed first. Setting up the scripts for your system is next.  
+Setting up the scripts for your system is next.  Command usage is briefly shown after that.. 
+
+# Setup
+These are listed in order from most critical to least critical. 
+
+# ~/.wrfHydroScripts            
+This file specifies the path to this repository on your computer (potentially other items to be added) and is 
+assumed to be in this location with this name . E.g. 
+
+> jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
+> wrfHydroScripts=/home/jamesmcc/wrfHydroScripts 
+> ncoScripts=/home/jamesmcc/ncScriptsjamesmcc 
+
+# sourceMe.sh 
+This file is meant to be sourced into a bash shell to give auto-complete (e.g. seemingly in your path) commandline 
+functionality for calling the scripts
+
+> jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.sh 
+
+but better yet, put it in your ~/.bashrc (or ~/.bash_profile, depending on your system).
+
+> jamesmcc@hydro-c1:~> grep sourceMe ~/.bashrc  
+> source ~/wrfHydroScripts/sourceMe.sh  
+
+Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other 
+shenanigans). 
+
+# ~/.wrfHydroRegressionTests.txt
+For regression testing only. This file specifies where regression test _attempts_ are to be carried out and enumerates "canned" regression tests for
+interactive selection during the script.
+
+> jamesmcc@hydro-c1:~> cat ~/.wrfHydroRegressionTests.txt  
+> attemptDir = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/ATTEMPTS  
+>   
+> *** Regression Tests Menu  
+> 1: Boulder Creek 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD  
+> 2: Boulder Creek NLDAS forcing 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD_NLDAS  
+> 3: Front Range   4D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD  
+> 4: Front Range   6H NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD_6HR  
+> *** Regression Tests Menu   
+>   
+>     
+> *** testNLast Menu - currently this menu is to be comment selected, opt out = # at start  
+> 1: testNaOutput   : fails if there are nans in any variable in the file  
+> 2: testDiffOutput : test fails if there are non-zero differences with verification output  
+> *** testNLast Menu  
+
 
 # Commands
 ## Running WRF-Hydro
@@ -41,7 +87,7 @@ Commands are listed first. Setting up the scripts for your system is next.
 ## Regression testing
 * __regTest [-q] binary__
 
-* __compareOutputs__
+* __testNLast__
 
 ## Compiling WRF-Hydro
 * __compileAll__
@@ -61,43 +107,6 @@ Color coding sections/warnings/errors/etc in long, verbose outputs from complica
 the color-coding cheat sheet.
 
 * __hgrep__
-
-
-# Setup
-These are listed in order from most critical to least critical. 
-
-# ~/.wrfHydroScripts            
-This file specifies the path to this repository on your computer (potentially other items to be added) and is 
-assumed to be in this location with this name . E.g. 
-
-> jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
-> wrfHydroScripts=/home/jamesmcc/wrfHydroScripts  
-
-# sourceMe.sh 
-This file is meant to be sourced into a bash shell to give auto-complete (e.g. seemingly in your path) commandline 
-functionality for calling the scripts
-
-> jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.sh 
-
-but better yet, put it in your ~/.bashrc (or ~/.bash_profile, depending on your system).
-
-> jamesmcc@hydro-c1:~> grep sourceMe ~/.bashrc  
-> source ~/wrfHydroScripts/sourceMe.sh  
-
-Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other 
-shenanigans). 
-
-# ~/.wrfHydroRegressionTests.txt
-For regression testing only. This file specifies where regression test _attempts_ are to be carried out and enumerates "canned" regression tests for
-interactive selection during the script.
-
-> jamesmcc@hydro-c1:~> cat ~/.wrfHydroRegressionTests.txt  
-> attemptDir = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/ATTEMPTS    
->   
-> 1: Boulder Creek 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD  
-> 2: Boulder Creek NLDAS forcing 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD_NLDAS  
-> 3: Front Range   4D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD  
-> 4: Front Range   6H NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD_6HR  
 
 
 

@@ -37,7 +37,7 @@ https://github.com/integrations/feature/build
 '
 
 ##future arguments
-## # of last outputs to compare passed to compareOutputs.
+## # of last outputs to compare passed to testNLast.sh.
 
 cleanRunScript=cleanRun.sh
 while getopts ":q" opt; do
@@ -53,52 +53,40 @@ done
 shift "$((OPTIND-1))" # Shift off the options and optional
 
 whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+source $whsPath/helpers.sh
 
 ## First check for ~/.wrfHydroRegressionTests.txt
 configFile=~/.wrfHydroRegressionTests.txt
-if [ ! -e $configGile ] 
-then 
-    echo -e "\e[31mYour ~/.wrfHydroRegressionTests.txt does not exist.\e[0m $help"
-    exit 1
-fi
+checkExist $configFile || exit 1
 
 ## Argument 1
 theBinary=$1
-if [ -z $theBinary ]; then echo -e "\e[31mNo binary supplied, returning.\e[0m $help"; exit 1; fi
-if [ ! -e $theBinary ] 
-then
-    echo -e "\e[31mBinary does not exist: $theBinary\e[0m $help"
-    exit 1
-fi
-checkBinary=`ldd $theBinary`
-if [ ! $? -eq 0 ] 
-then
-    echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
-    exit 1
-fi
+checkBinary $theBinary || exit 1
 
+theBinary=`getAbsPath $theBinary`
 if [[ `dirname $theBinary` == '.' ]];then theBinary=`pwd`/$theBinary; fi
 
 ## Argument 2: optional path to test dir
+regTestMenu=`getMenu $configFile 'Regression Tests Menu'`
 if [ -z $2 ]
 then 
     ## if no test specified, let user choose between canned options in configFile
     echo -e "\e[7;44;97mPlease select a test case by number (0 to quit):\e[0m"
-    echo -e "\e[96m`egrep '[1-9]*:' $configFile` \e[0m"
+    echo  -e "\e[96m$regTestMenu\e[0m"
     testDir=''
     while [ -z $testDir ] 
     do
         read caseNum
         if [[ ! $caseNum =~ ^-?[0-9]+$ ]]; then continue; fi
         ## pull that case out of the config file
-        testDir=`egrep "$caseNum.*:" $configFile | cut -d'=' -f2 | tr -d ' '`
+        testDir=`echo "$regTestMenu" | egrep "$caseNum.*:" | cut -d'=' -f2 | tr -d ' '`
     done 
 else
     testDir=$2
     ## if an integer, use it to select a canned test case from configFile
     if [[ $testDir =~ ^-?[0-9]+$ ]]    
     then
-        testDir=`egrep "$testDir.*:" $configFile | cut -d'=' -f2 | tr -d ' '`
+        testDir=`echo "$regTestMenu" | egrep "$testDir.*:" | cut -d'=' -f2 | tr -d ' '`
         if [ -z $testDir ]
         then
             echo -e "\e[31mPassed test case number did not successfully select a test case.\e[0m"
@@ -110,6 +98,7 @@ else
 
     fi
 fi
+
 
 ## Check existence of test directory 
 if [ -z $testDir ]; then 
@@ -167,7 +156,7 @@ ln -s `basename $theBinary` wrf_hydro.exe
 ## run the model
 echo
 echo -e "\e[7;44;97mRun the model, using $nCores cores.\e[0m"
-if [ cleanRunScript == cleanRun.sh ]
+if [ $cleanRunScript == cleanRun.sh ]
 then
     $whsPath/$cleanRunScript $nCores
     modelSuccess=$?
@@ -198,7 +187,7 @@ fi
 ## compare the output
 ## what if OUPUT dir is specified by the namelist.hrldas?
 echo -e "\e[7;44;97mOutput comparison:\e[0m"
-$whsPath/compareOutputs.sh 1 $testRunDir/VERIFICATION 
+$whsPath/testNLast.sh 1 $testRunDir/VERIFICATION 
 retComp=$?
 
 echo -e "\e[7;44;97mOutput comparison results:\e[0m"

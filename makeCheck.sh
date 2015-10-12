@@ -17,6 +17,8 @@ make &> make.log
 
 count=0
 
+
+
 illegals=`grep -i 'illegal' make.log`
 if [ $? -eq 0 ] 
 then
@@ -25,7 +27,9 @@ then
     ((count++))
 fi
 
-warns=`grep -i 'warn' make.log`
+warnDontShow="(warning: extra tokens at end of #endif directive)"
+warns=`grep -i 'warn' make.log | egrep -v "$dontShow"`
+
 if [ $? -eq 0 ] 
 then
     echo -e "\e[43m++ warns ++\e[0m"

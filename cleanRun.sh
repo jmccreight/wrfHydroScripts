@@ -157,4 +157,4 @@ echo -e "\e[36mReturn code: $mpiReturn\e[0m"
 exit $mpiReturn
 
 
-exit 0
+exit $mpiReturn

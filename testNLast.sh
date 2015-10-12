@@ -4,19 +4,20 @@
 help="
 Arguments
 1) first argument is how many of each file to compare going backwards from the last one.
-2) OPTIONAL second argument is the path to the verification data. 
-3) OPTIONAL but need 2 if you use 3: third argument is the path to your output, if missing 
-            assuming you're in the run or ouput directory.
+2) OPTIONAL second argument is the (relative or abs) path to the verification data. 
+3) OPTIONAL but need 2 if you use 3: third argument is the (relative or abs) path to your 
+            output, if missing assuming you're in the run or ouput directory.
+
 "
 
-## Dependency on this file, in case you change computers.
-source ~jamesmcc/ncScripts/ncFilters.sh
-source ~jamesmcc/wrfHydroScripts/helpers.sh
+whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+source $whsPath/helpers.sh
+source $whsPath/ncoTests.sh
 
 nLast=$1
 if [[ ! $nLast =~ ^-?[0-9]+$ ]]
 then
-    echo -e "\e[31mPlease supply a valid integer for the firt argument 'nLast'\e[0m $help".
+    echo -e "\e[31mPlease supply a valid integer for the first argument 'nLast'\e[0m $help".
     exit 1
 fi
 
@@ -55,8 +56,11 @@ echo "The WRF-Hydro file kinds to be compared (you may want to add others):"
 echo ${fileWilds[*]}
 echo ""
 
-accRetDiffs=0
+configFile=~/.wrfHydroRegressionTests.txt
+nLastTestMenu=`getMenu $configFile testNLast`
+menuSelections=`echo "$nLastTestMenu" | tr -d ' ' | grep -v '^#' | cut -d ':' -f2`
 
+accumReturns=0
 for ll in `seq $nLast -1 1`
 do
     echo -e "\e[46mThe $((ll-1)) before last file of this kind:\e[0m"
@@ -73,12 +77,26 @@ do
         theFile=`echo "${matches[*]}" | tail -n $ll | head -n 1`
         IFS=$ifsOrig
         echo -e "\e[7m $theFile \e[0m"
-        echo -e "\e[34mncVarDiff $myRunOutDir/$theFile $origRunOutDir/$theFile\e[0m"
-        diffOut=`ncVarDiff $myRunOutDir/$theFile $origRunOutDir/$theFile 2>&1`
-        retDiff=$?
-        accRetDiff=$(($accRetDiff+$retDiff))
+        
+        #########
+        ## unary checks on new output
+        if isInSet testNaOutput "$menuSelections"
+        then
+            testNaOutput $myRunOutDir/$theFile
+            accumReturns=$(($accumReturns+$?))
+        fi
+
+        #########
+        ## binary checks with new and old output
+        if isInSet testDiffOutput "$menuSelections"
+        then
+            testDiffOutput $myRunOutDir/$theFile $origRunOutDir/$theFile
+            accumReturns=$(($accumReturns+$?))
+        fi
+
+
         echo -e "\e[31m$diffOut\e[0m"
     done
 done
 
-exit $accRetDiff
+exit $accumReturns

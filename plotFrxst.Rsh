@@ -9,7 +9,7 @@ args <- commandArgs(TRUE)
 path <- args[1]
 if(is.na(path)) path <- paste0(getwd(),'/frxst_pts_out.txt')
 if(dir.exists(path)) path <- paste0(path,'/frxst_pts_out.txt')
-print(path)
+cat(paste0(path,'\n'))
 outFile <- paste0(dirname(path),'/frxst_pts_PLOT.png')
 
 if(file.exists(path)) {
@@ -17,6 +17,7 @@ if(file.exists(path)) {
     suppressPackageStartupMessages(library(ggplot2))
     cat(paste0('Input file: ',path,'\n'))
     frxst <- ReadFrxstPts(path)
+    frxst <- subset(frxst, !is.na(frxst$q_cms))
     png(width=1500, height=900, file=outFile)
     print(
         ggplot(frxst,aes(x=POSIXct, y=q_cms, color=st_id)) +
@@ -24,7 +25,7 @@ if(file.exists(path)) {
             scale_color_discrete(guide='none') +
             scale_x_datetime(name='') +
             ggtitle(path) +
-            theme_bw(base_size=36)
+            theme_bw(base_size=24)
          )
     invisible(dev.off())
 }

@@ -34,8 +34,8 @@ function linkToTestCase {
     $whsPath/linkToTestCase.sh $@
 }
 
-function compareOutputs {
-    $whsPath/compareOutputs.sh $@
+function testNLast {
+    $whsPath/testNLast.sh $@
 }
 
 function makeCheck {

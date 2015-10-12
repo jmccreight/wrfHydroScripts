@@ -35,23 +35,28 @@ nNodes=`echo "$nCores/16" | bc`
 workingDir=`pwd`
 whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '`
 
-theDate=`date '+%Y-%m-%d_%H:%M:%S'`
+theDate=`date '+%Y-%m-%d_%H-%M-%S'`
 jobFile=job.qCleanRun.$theDate
 
 echo "#!/bin/bash
 #PBS -l nodes=$nNodes:ppn=16,walltime=20:00:00
 #PBS -k oe
-#PBS -o logs/stdout.${theDate}.txt
-#PBS -e logs/stderr.${theDate}.txt
+#PBS -o logs/stdout.$theDate.txt
+#PBS -e logs/stderr.$theDate.txt
 #PBS -N wrfhydro
 
 source ~/.bashrc
 
 cd $workingDir
 $whsPath/cleanRun.sh ${allArgs}
+modelReturn=$?
 rm $jobFile
-exit 0" > $jobFile
+exit $modelReturn" > $jobFile
 
 qsub $jobFile
 
 exit 0
+
+
+
+
