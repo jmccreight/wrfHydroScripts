@@ -25,7 +25,8 @@ assumed to be in this location with this name . E.g.
 
 > jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
 > wrfHydroScripts=/home/jamesmcc/wrfHydroScripts 
-> ncoScripts=/home/jamesmcc/ncScriptsjamesmcc 
+> ncoScripts=/home/jamesmcc/ncScriptsjamesmcc  
+> wrf_hydro_model=/home/jamesmcc/WRF_Hydro/wrf_hydro_model
 
 # sourceMe.sh 
 This file is meant to be sourced into a bash shell to give auto-complete (e.g. seemingly in your path) commandline 
