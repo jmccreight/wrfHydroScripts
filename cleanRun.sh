@@ -10,8 +10,9 @@ and run there. ASSUMES that the model is wrf_hydro.exe in calling
 directory.
 
 Options:
-  Those taken by linkToTestCase. Passed to if when the optional
-  second argument is used to establish a run directory.        
+  Those taken by cleanup (-r) and linkToTestCase (-fpunc). The later 
+  are onlyPassed to linkToTestCase when the optional second argument 
+  is used to establish a run directory.        
 
 Arguments:
  1) The number of mpi tasks (processors)
@@ -31,14 +32,15 @@ There is a special section to detect the correct build of mpi,
 
 "
 
-
 ## options are just passed to linkToTestCase.sh 
 ## Wish there were an easier way to do this other than copy the code.
 cOpt=''
 uOpt=''
 nOpt=''
 pOpt=''
-while getopts ":ucnp" opt; do
+fOpt=''
+rOpt=''
+while getopts ":fpuncr" opt; do
   case $opt in
     u)
       uOpt="-u"
@@ -46,11 +48,17 @@ while getopts ":ucnp" opt; do
     c)
       cOpt="-c"
       ;;
+    f)
+      cOpt="-f"
+      ;;
     n)
       nOpt="-n"
       ;;
     p)
       pOpt="-p"
+      ;;
+    r)
+      rOpt="-r"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -111,6 +119,7 @@ then
     fi
 fi  
 
+
                    
 ## now deal with the run directory 
 if [ ! -z $runDir ] 
@@ -124,17 +133,22 @@ then
             exit 1
         fi
     fi
+
+    ## clean up the run directory BEFORE linking to restarts
+    origDir=`pwd`
+    cd $runDir   
+    $whsPath/cleanup.sh $rOpt
+    cd $origDir
+
     ## setup the new run directory
     $whsPath/linkToTestCase.sh \
-        $cOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
+        $cOpt $fOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
     origDir=`pwd`
     cd $runDir
     ## always copy the binary
     cp $origDir/$theBinary .
 fi
 
-## clean up the run directory
-$whsPath/cleanup.sh
 
 ## a check for the ifort versus the pg compiler
 useIfort=`ldd $theBinary | grep ifort | wc -l`
@@ -146,7 +160,7 @@ fi
 if [ "$useIfort" -gt 0 ] 
 then
     echo -e "\e[31mDetected intel fortran binary\e[0m"
-    MPIRUN=/opt/openmpi-1.10.0-intel/bin/mpirun
+    MPIRUN=/opt/openmpi-1.10.0-intel/bin/mpirun --prefix=/opt/openmpi-1.10.0-intel
 else
     MPIRUN=mpirun
 fi

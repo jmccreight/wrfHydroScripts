@@ -4,8 +4,8 @@ searchStr=("$@")
 
 echo "${searchStr[@]}"
 
-#cd ~/WRF_Hydro/ndhms.beta2me/trunk/NDHMS/
-cd ~/WRF_Hydro/wrf_hydro_model/trunk/NDHMS/
+whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+cd $whmPath/trunk/NDHMS/
 
 egrep -s "${searchStr[@]}" */*.inc
 

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '`
+cleanRunHelp=`$whsPath/cleanRun.sh | tail -n+2`
 
 help="
 qCleanRun :: help
@@ -10,6 +12,8 @@ by 16. (Assumes the job is to be run from the current dir, where the binary is f
 
 Other header items to qsub may need adjusted on an individual basis.
 
+Arguments as for cleanRun...
+$cleanRunHelp
 "
 
 if [ -z $1 ]
@@ -19,21 +23,23 @@ then
 fi
 
 allArgs=$@
-while getopts ":ucnp" opt; do
+while getopts ":fpuncr" opt; do
   case $opt in
     \?)
+          echo "Invalid option: -$OPTARG" >&2
       ;;
   esac
 done
 shift "$((OPTIND-1))" 
+
 IFS=$'\n'
 nCores=$1
+## fix this needs some rounding maths... apparently not trivial w bc
 nNodes=`echo "$nCores/16" | bc`
 #echo $nNodes
 #echo "$allArgs"
 
 workingDir=`pwd`
-whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '`
 
 theDate=`date '+%Y-%m-%d_%H-%M-%S'`
 jobFile=job.qCleanRun.$theDate

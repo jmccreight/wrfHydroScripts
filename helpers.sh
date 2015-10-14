@@ -7,7 +7,7 @@ function checkExist {
     # arg 2: OPTIONAL, additional text to echo
     if [ ! -e $1 ]; then 
         echo -e "\e[31m${1} does not exist.\e[0m" 
-        if [ ! -z $2 ]; then echo -e $2; fi
+        if [ ! -z $2 ]; then echo -e "$2"; fi
         return 1
     else 
         return 0
@@ -29,20 +29,24 @@ function getAbsPath {
 
 function checkBinary {
     theBinary=$1
-    if [ -z $theBinary ]; then echo -e "\e[31mNo binary supplied, returning.\e[0m"; return 1; fi
-    if [ ! -e $theBinary ] 
+    message="$2"
+    if [[ -z $theBinary ]]; then echo -e "\e[31mNo binary supplied, returning.\e[0m"; return 1; fi
+    if [[ ! -e $theBinary ]] 
     then
-        echo -e "\e[31mBinary does not exist: $theBinary\e[0m"
+        echo -e "\e[31mBinary does not exist:\e[0m $theBinary"
+        if [[ ! -z "$message" ]]; then echo -e "$message"; fi
         return 1
     fi
     checkBinary=`ldd $theBinary`
     if [ ! $? -eq 0 ] 
     then
         echo -e "\e[31mProblems with executable:\e[0m $theBinary"
+        if [[ ! -z "$message" ]]; then echo -e "$message"; fi
         return 1
     fi
     return 0
 }
+
 
 function getMenu {
     if [ -z $1 ]; then echo -e "\e[31mgetMenu requires its first arg to be a config file.\e[0m"; fi
@@ -65,6 +69,7 @@ function getMenu {
     head -$((${whMenu[1]}-1)) $configFile | tail -${nItems}
     return 0
 }
+
 
 function isInSet {
     # usage: 

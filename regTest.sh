@@ -60,11 +60,11 @@ source $whsPath/helpers.sh
 
 ## First check for ~/.wrfHydroRegressionTests.txt
 configFile=~/.wrfHydroRegressionTests.txt
-checkExist $configFile || exit 1
+checkExist $configFile "$help" || exit 1
 
 ## Argument 1
 theBinary=$1
-checkBinary $theBinary || exit 1
+checkBinary $theBinary "$help" || exit 1
 theBinary=`getAbsPath $theBinary`
 
 ## Argument 2: optional path to test dir

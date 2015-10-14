@@ -5,7 +5,7 @@ then
     ## default if nothing passed
     confOpt=2
 else 
-    ## if the passed argument is not an integers
+    ## if the passed argument is not an integer
     if [[ ! $1 == [1-8] ]]
     then
         confOpt=2
@@ -24,7 +24,7 @@ function errGrep {
 
 function cleanCompile {
     henv | egrep -i '(precip|nudging)'
-    echo -e "\e[46mconfigure\e[0m"
+    echo -e "\e[46mconfigure $confOpt\e[0m"
     ./configure $confOpt &> /dev/null
     echo -e "\e[46mmake clean\e[0m"
     make clean &> /dev/null
@@ -39,13 +39,15 @@ function cleanCompile {
 }
 
 ## check branch
-cd ~/WRF_Hydro/wrf_hydro_model/trunk/NDHMS/
+whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
+cd $whmPath/trunk/NDHMS/
+
 theBranch=`git branch | grep '*' | tr -d "*" | tr -d ' '`
 echo $theBranch
 export WRF_HYDRO=1
 export HYDRO_REALTIME=0
 
-if [ $theBranch == "daBranch" ] | [ $theBranch == "newDa" ] 
+if [[ $theBranch == "nudging" ]]
 then
     echo "Compiling daBranch"
 
@@ -72,10 +74,9 @@ then
     cleanCompile
     cp Run/wrf_hydro.exe Run/wrf_hydro.nudging.exe    
     ls -lah --color=auto Run/wrf_hydro.nudging.exe
-
 fi
 
-if [ $theBranch == "master" ]
+if [[ $theBranch == "master" ]]
 then
     echo "Compiling master"
 

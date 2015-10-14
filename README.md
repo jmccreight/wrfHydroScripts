@@ -14,7 +14,7 @@ the full paths to the script files to call them)
 
 Note this is a work in progress.  
 
-Setting up the scripts for your system is next.  Command usage is briefly shown after that.. 
+Setting up the scripts for your system is next.  General usage tips are then given. Command usage is briefly shown after that.. 
 
 # Setup
 These are listed in order from most critical to least critical. 
@@ -60,6 +60,14 @@ interactive selection during the script.
 > 1: testNaOutput   : fails if there are nans in any variable in the file  
 > 2: testDiffOutput : test fails if there are non-zero differences with verification output  
 > *** testNLast Menu  
+
+# Usage tips
+
+* One of the more complicated scripts that creates copies and/or links on your computer is __linkToTestCase__.   
+  The most important piece of advice for avoiding a rats nest of links and copied files is:  
+  _In your namelists, never point to directories or files outside of the run directory._   
+  Use symlinks in to make all namelist references local to the run directory. For example, never use "../" or
+  any other absolute path in your namelists. 
 
 
 # Commands

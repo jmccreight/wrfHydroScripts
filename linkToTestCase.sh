@@ -10,11 +10,15 @@ dependencies as specified in their namelists (and really nothing more)
 and all the run dependencies (namelists and *TBL files).
 
 Options:
- -c Copy instead of link. Useful when you want to extract/establish a test case 
-    from an existing directory where other stuff may live.
- -n Get nudging files. 
+ -c Copy instead of link **all files but forcings**. Useful when you want 
+    to extract/establish a test case from an existing directory where other 
+    stuff may live or run different instances of the same domain in different
+    run directories but change the namelist and other dependencies besides
+    forcings while the runs are occuring.
+ -f force copy of forcing files: -cf copies all model dependencies. 
+ -n Get nudging files: for nudging -cfn copies all model dependencies.
  -p write protect the results.
- -f un-write protect and clobber write protected files
+ -u un-write protect and clobber write protected files
 
 Arguments:
  1) ($test) The name of the test you want to link to relative to $testDir, could be 
@@ -43,10 +47,11 @@ source $whsPath/helpers.sh
 ## OPTIONS
 # Defaults first
 linkOrCopy='link'  
-getNudgingFiles=1
-writeProtect=1
-unWriteProtect=1
-while getopts ":ucnp" opt; do
+getNudgingFiles=1  ## FALSE
+writeProtect=1     ## FALSE
+unWriteProtect=1   ## FALSE
+linkForc=0         ## TRUE 
+while getopts ":fpunc" opt; do
   case $opt in
     u)
       echo -e "\e[41mUN-Write protecting files.\e[0m"
@@ -62,6 +67,10 @@ while getopts ":ucnp" opt; do
     c)
       echo -e "\e[46mCopying files instead of linking.\e[0m"
       linkOrCopy='copy'
+      ;;
+    f)
+      echo -e "\e[46mCopying FORCING files instead of linking.\e[0m"
+      linkForc=1
       ;;
     n)
       echo -e "\e[46mGetting nudging files.\e[0m"
@@ -166,7 +175,7 @@ function linkReqFiles {
     echo -e "\e[7m $file \e[0m"
     IFS=$'\n'
     namesInFile=`egrep "('|\")" $file`
-
+l
     for ii in $namesInFile
     do
         IFS=$'\n'
@@ -178,6 +187,7 @@ function linkReqFiles {
             echo '----------------------------------'
             theLine=`echo $jj | tr -d ' '`
             echo $theLine
+            nlstItem=`echo $jj | cut -d'=' -f1 | tr -d ' '`
             pathFile=`echo $jj | cut -d'=' -f2 | tr -d ' ' | tr -d "'" | tr -d '"'`
             thePath=`dirname $pathFile`
             theFile=`basename $pathFile`
@@ -194,9 +204,15 @@ function linkReqFiles {
                 if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
                 ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
             else 
-                ## cp --remove-destination is BAD, disrespects permissions
-                if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
-                cp -rH $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+                if [[ $nlstItem == "INDIR" ]] && [[ $linkForc -eq 0 ]] ## require -f flag to force copy of forcings, otherwise always link them
+                then 
+                    if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
+                    ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+                else 
+                    ## cp --remove-destination is BAD, disrespects permissions
+                    if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
+                    cp -rH $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+                fi
             fi
             if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/$thePath/$theFile; fi
             ls -dl --color=auto $targetDir/$thePath/$theFile
