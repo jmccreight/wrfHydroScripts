@@ -23,7 +23,7 @@ then
 fi
 
 allArgs=$@
-while getopts ":fpuncr" opt; do
+while getopts ":fpuncdr" opt; do
   case $opt in
     \?)
           echo "Invalid option: -$OPTARG" >&2

@@ -83,10 +83,11 @@ function isInSet {
     #echo set: "$set"
     #echo opts: "$opts"
     #echo member?: "$member"
-    setSize=`echo $set | tr ' ' '\n' | wc -l`
+    set=`echo "$set" | tr ' ' '\n'`
+    setSize=`echo "$set" | wc -l`
     if [[ $setSize -le 1 ]] 
     then
-        echo "The passed set only has one member, you likely forgot the double quotes on the variable"
+        echo "The passed set only has one member, you likely forgot the double quotes on the set variable"
         return 1
     fi
     for ss in $set

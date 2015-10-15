@@ -10,13 +10,16 @@ dependencies as specified in their namelists (and really nothing more)
 and all the run dependencies (namelists and *TBL files).
 
 Options:
- -c Copy instead of link **all files but forcings**. Useful when you want 
-    to extract/establish a test case from an existing directory where other 
+ -c Copy instead of link **all files but DOMAIN and forcings**. Useful when you 
+    want to extract/establish a test case from an existing directory where other 
     stuff may live or run different instances of the same domain in different
     run directories but change the namelist and other dependencies besides
     forcings while the runs are occuring.
- -f force copy of forcing files: -cf copies all model dependencies. 
- -n Get nudging files: for nudging -cfn copies all model dependencies.
+ -f force copy of forcing files: -cdf copies all model dependencies. 
+ -d force copy of DOMAIN files: -cdf copies all model dependencies. (Note 
+    that these are recognized by the names currently used in the namelists, 
+    not by their placement in a DOMAIN/ folder.
+ -n Get nudging files: for nudging -cdfn copies all model dependencies when nudging.
  -p write protect the results.
  -u un-write protect and clobber write protected files
 
@@ -51,7 +54,8 @@ getNudgingFiles=1  ## FALSE
 writeProtect=1     ## FALSE
 unWriteProtect=1   ## FALSE
 linkForc=0         ## TRUE 
-while getopts ":fpunc" opt; do
+linkDomain=0         ## TRUE 
+while getopts ":fpuncd" opt; do
   case $opt in
     u)
       echo -e "\e[41mUN-Write protecting files.\e[0m"
@@ -65,12 +69,16 @@ while getopts ":fpunc" opt; do
       unWriteProtect=0
       ;;
     c)
-      echo -e "\e[46mCopying files instead of linking.\e[0m"
+      echo -e "\e[46mCopying files instead of linking (but not DOMAIN or FORCING files).\e[0m"
       linkOrCopy='copy'
       ;;
     f)
       echo -e "\e[46mCopying FORCING files instead of linking.\e[0m"
       linkForc=1
+      ;;
+    d)
+      echo -e "\e[46mCopying DOMAIN files instead of linking.\e[0m"
+      linkDomain=1
       ;;
     n)
       echo -e "\e[46mGetting nudging files.\e[0m"
@@ -204,7 +212,15 @@ l
                 if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
                 ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
             else 
-                if [[ $nlstItem == "INDIR" ]] && [[ $linkForc -eq 0 ]] ## require -f flag to force copy of forcings, otherwise always link them
+                ## Either: require -f flag to force copy of forcings, otherwise always link them
+                [[ $nlstItem == "INDIR" ]] && [[ $linkForc -eq 0 ]]
+                test1=$?
+                ## Or: require -d flag to force copy of DOMAIN/ files, otherwise always link them
+                domainSet='HRLDAS_SETUP_FILE GEO_STATIC_FLNM GEO_FINEGRID_FLNM'
+                domainSet="${domainSet} route_link_f GWBUCKPARM_file gwbasmskfil udmap_file"
+                isInSet "$nlstItem" "$domainSet" && [[ $linkDomain -eq 0 ]]
+                test2=$?
+                if [ $test1 -eq 0 ] || [ $test2 -eq 0 ]  ## or
                 then 
                     if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
                     ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile

@@ -34,13 +34,14 @@ There is a special section to detect the correct build of mpi,
 
 ## options are just passed to linkToTestCase.sh 
 ## Wish there were an easier way to do this other than copy the code.
-cOpt=''
+fOpt=''
+pOpt=''
 uOpt=''
 nOpt=''
-pOpt=''
-fOpt=''
+cOpt=''
+dOpt=''
 rOpt=''
-while getopts ":fpuncr" opt; do
+while getopts ":fpuncdr" opt; do
   case $opt in
     u)
       uOpt="-u"
@@ -49,7 +50,10 @@ while getopts ":fpuncr" opt; do
       cOpt="-c"
       ;;
     f)
-      cOpt="-f"
+      fOpt="-f"
+      ;;
+    d)
+      dOpt="-d"
       ;;
     n)
       nOpt="-n"
@@ -142,7 +146,7 @@ then
 
     ## setup the new run directory
     $whsPath/linkToTestCase.sh \
-        $cOpt $fOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
+        $cOpt $fOpt $dOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
     origDir=`pwd`
     cd $runDir
     ## always copy the binary
@@ -160,7 +164,7 @@ fi
 if [ "$useIfort" -gt 0 ] 
 then
     echo -e "\e[31mDetected intel fortran binary\e[0m"
-    MPIRUN=/opt/openmpi-1.10.0-intel/bin/mpirun --prefix=/opt/openmpi-1.10.0-intel
+    MPIRUN="/opt/openmpi-1.10.0-intel/bin/mpirun --prefix /opt/openmpi-1.10.0-intel"
 else
     MPIRUN=mpirun
 fi
