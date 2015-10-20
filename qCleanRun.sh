@@ -55,7 +55,7 @@ source ~/.bashrc
 
 cd $workingDir
 $whsPath/cleanRun.sh ${allArgs}
-modelReturn=$?
+modelReturn=\$?
 rm $jobFile
 exit $modelReturn" > $jobFile
 

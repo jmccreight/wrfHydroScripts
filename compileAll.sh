@@ -49,7 +49,7 @@ export HYDRO_REALTIME=0
 
 if [[ $theBranch == "nudging" ]]
 then
-    echo "Compiling daBranch"
+    echo "Compiling $theBranch"
 
     echo
     echo -e "\e[7;47;39mnoNudging\e[0m"

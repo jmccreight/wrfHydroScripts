@@ -154,25 +154,39 @@ then
 fi
 
 
-## a check for the ifort versus the pg compiler
-useIfort=`ldd $theBinary | grep ifort | wc -l`
-if [ ! $? -eq 0 ] 
-then
-    echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
-    exit 1
+## potentially different invocations of mpirun. 
+## deal with host differences: put your flavor here
+theHost=`hostname`
+
+## YELLOWSTONE
+if [[ $theHost == *"ys"* ]] 
+then 
+    echo "Running on yellowstone!"
+    mpirun.lsf ./$theBinary
 fi
-if [ "$useIfort" -gt 0 ] 
-then
-    echo -e "\e[31mDetected intel fortran binary\e[0m"
-    MPIRUN="/opt/openmpi-1.10.0-intel/bin/mpirun --prefix /opt/openmpi-1.10.0-intel"
-else
-    MPIRUN=mpirun
-fi
+
+## HYDRO-C1
+if [[ $hostname == hydro-c1 ]] 
+then 
+    ## a check for the ifort versus the pg compiler
+    useIfort=`ldd $theBinary | grep ifort | wc -l`
+    if [ ! $? -eq 0 ] 
+    then
+        echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
+        exit 1
+    fi
+    if [ "$useIfort" -gt 0 ] 
+    then
+        echo -e "\e[31mDetected intel fortran binary\e[0m"
+        MPIRUN="/opt/openmpi-1.10.0-intel/bin/mpirun --prefix /opt/openmpi-1.10.0-intel"
+    else
+        MPIRUN=mpirun
+    fi
+    $MPIRUN -np $nMpiTasks ./$theBinary
+fi 
     
-$MPIRUN -np $nMpiTasks ./$theBinary
+## MPI return   
 mpiReturn=$?
 echo -e "\e[36mReturn code: $mpiReturn\e[0m"
-exit $mpiReturn
-
 
 exit $mpiReturn

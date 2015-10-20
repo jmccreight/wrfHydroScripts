@@ -156,6 +156,8 @@ do
     else 
         if [[ -d $theSource ]] ## directory
         then
+            ## fix -- dont copy observation files for nudging. require -o?
+            ## for links, follow full link "readlink -e"?
             ## cp --remove-destination disrepsects permissions! so write this.
             if [[ -h $theTarget ]]; then rm -r $theTarget; fi  ## if symlink 
             cp -rH $theSource .
@@ -183,7 +185,7 @@ function linkReqFiles {
     echo -e "\e[7m $file \e[0m"
     IFS=$'\n'
     namesInFile=`egrep "('|\")" $file`
-l
+
     for ii in $namesInFile
     do
         IFS=$'\n'
