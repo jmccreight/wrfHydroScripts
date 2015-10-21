@@ -19,5 +19,4 @@ egrep -s "${searchStr[@]}" */*/Makefile
 egrep -s "${searchStr[@]}" */*/*/Makefile
 egrep -s "${searchStr[@]}" */*/*/*/Makefile
 
-
 exit 0

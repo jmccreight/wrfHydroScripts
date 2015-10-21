@@ -58,5 +58,9 @@ function regTest {
     $whsPath/regTest.sh $@
 }
 
+function hgrep {
+    $whsPath/hgrep.sh $@
+}
+
 
 return 0

@@ -23,7 +23,7 @@ then
 fi
 
 allArgs=$@
-while getopts ":fpuncdr" opt; do
+while getopts ":fpuncdor" opt; do
   case $opt in
     \?)
           echo "Invalid option: -$OPTARG" >&2
@@ -53,10 +53,17 @@ echo "#!/bin/bash
 
 source ~/.bashrc
 
+## To communicate where the stderr/out and job scripts are and their ID
+export cleanRunDateId=${theDate}
+
 cd $workingDir
+
 $whsPath/cleanRun.sh ${allArgs}
 modelReturn=\$?
-rm $jobFile
+
+unset cleanRunDateId
+
+echo \"model return: \$modelReturn\"
 exit $modelReturn" > $jobFile
 
 qsub $jobFile

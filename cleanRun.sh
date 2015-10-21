@@ -40,8 +40,9 @@ uOpt=''
 nOpt=''
 cOpt=''
 dOpt=''
+oOpt=''
 rOpt=''
-while getopts ":fpuncdr" opt; do
+while getopts ":fpuncdor" opt; do
   case $opt in
     u)
       uOpt="-u"
@@ -54,6 +55,9 @@ while getopts ":fpuncdr" opt; do
       ;;
     d)
       dOpt="-d"
+      ;;
+    o)
+      dOpt="-o"
       ;;
     n)
       nOpt="-n"
@@ -146,13 +150,12 @@ then
 
     ## setup the new run directory
     $whsPath/linkToTestCase.sh \
-        $cOpt $fOpt $dOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
+        $cOpt $fOpt $oOpt $dOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
     origDir=`pwd`
     cd $runDir
     ## always copy the binary
     cp $origDir/$theBinary .
 fi
-
 
 ## potentially different invocations of mpirun. 
 ## deal with host differences: put your flavor here
@@ -166,7 +169,7 @@ then
 fi
 
 ## HYDRO-C1
-if [[ $hostname == hydro-c1 ]] 
+if [[ $theHost == hydro-c1 ]] 
 then 
     ## a check for the ifort versus the pg compiler
     useIfort=`ldd $theBinary | grep ifort | wc -l`
@@ -188,5 +191,11 @@ fi
 ## MPI return   
 mpiReturn=$?
 echo -e "\e[36mReturn code: $mpiReturn\e[0m"
+
+if [ ! -z $cleanRunDateId ]
+then
+    cd $origDir
+    mv std*.${cleanRunDateId}.* job.*.${cleanRunDateId} ${runDir}/.
+fi
 
 exit $mpiReturn
