@@ -1,9 +1,14 @@
 #!/bin/bash
 ## Purpose: Compare the output from two WRF-Hydro runs for differences. 
 
+## fix: would be nice to know the order of the difference and have it match the order
+## of the arguments, attempt-verification
+
+## fix: if only one argument, just run unary tests?? it's easy enough to specify "." as the test dir.
+
 help="
 Arguments
-1) first argument is how many of each file to compare going backwards from the last one.
+1) how many of each file to compare going backwards from the last one (as N in "tail -N").
 2) OPTIONAL second argument is the (relative or abs) path to the verification data. 
 3) OPTIONAL but need 2 if you use 3: third argument is the (relative or abs) path to your 
             output, if missing assuming you're in the run or ouput directory.
@@ -24,6 +29,7 @@ fi
 if [ -z "$2" ]
 then
     origRunNamelist=`readlink namelist.hrldas`
+    if [ -z $origRunNamelist ]; then origRunNamelist=namelist.hrldas; fi
     origRunDir=`dirname $origRunNamelist`    
     nlstOutDir=`grep OUTDIR $origRunDir/namelist.hrldas | tr -d ' ' | egrep -v '^!'` || exit 1
     nlstOutDir=`echo $nlstOutDir | cut -d'=' -f2 | tr -d "'" | tr -d '"'`
@@ -57,6 +63,7 @@ echo ${fileWilds[*]}
 echo ""
 
 configFile=~/.wrfHydroRegressionTests.txt
+checkExist $configFile || exit 1
 nLastTestMenu=`getMenu $configFile testNLast`
 menuSelections=`echo "$nLastTestMenu" | tr -d ' ' | grep -v '^#' | cut -d ':' -f2`
 

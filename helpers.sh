@@ -102,3 +102,31 @@ function isInSet {
     done
     return 1
 }
+
+
+round() {
+    # $1 is expression to round (should be a valid bc expression)
+    # $2 is number of decimal figures (optional). Defaults to three if none given
+    [ !  -z $1 ] || return 1
+    local df=${2:-0}
+    printf '%.*f\n' "$df" "$(bc -l <<< "a=$1; if(a>0) a+=5/10^($df+1) else if (a<0) a-=5/10^($df+1); scale=$df; a/1")"
+    return 0
+}
+
+ceiling() {
+    # $1 is expression to ceiling (should be a valid bc expression)
+    [ !  -z $1 ] || return 1
+    in=$1
+    inRound=`round $in`
+    isInteger=`echo "$in == $inRound" | bc`
+    isNegative=`echo "$in < 0.0" | bc`
+    ## the result here is opposite the bash convention
+    if [[ $isInteger -eq 1 ]] || [[ $isNegative -eq 1 ]] 
+    then 
+        echo $inRound
+    else 
+        echo $((${inRound}+1)) 
+    fi
+    return 0
+}
+

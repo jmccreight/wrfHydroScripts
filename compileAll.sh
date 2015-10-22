@@ -1,9 +1,12 @@
 #!/bin/bash
+theHost=`hostname`
 
 if [ -z $1 ]
 then
     ## default if nothing passed
     confOpt=2
+    ## YELLOWSTONE
+    if [[ $theHost == *"yslogin"* ]]; then confOpt=8; fi
 else 
     ## if the passed argument is not an integer
     if [[ ! $1 == [1-8] ]]
@@ -43,13 +46,18 @@ whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '`
 cd $whmPath/trunk/NDHMS/
 
 theBranch=`git branch | grep '*' | tr -d "*" | tr -d ' '`
-echo $theBranch
+echo "On Branch: $theBranch"
+
 export WRF_HYDRO=1
 export HYDRO_REALTIME=0
+echo 
+echo -e "Relevant environment variables:"
+henv
+echo 
 
 if [[ $theBranch == "nudging" ]]
 then
-    echo "Compiling daBranch"
+
 
     echo
     echo -e "\e[7;47;39mnoNudging\e[0m"

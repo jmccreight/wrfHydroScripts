@@ -40,8 +40,9 @@ uOpt=''
 nOpt=''
 cOpt=''
 dOpt=''
+oOpt=''
 rOpt=''
-while getopts ":fpuncdr" opt; do
+while getopts ":fpuncdor" opt; do
   case $opt in
     u)
       uOpt="-u"
@@ -54,6 +55,9 @@ while getopts ":fpuncdr" opt; do
       ;;
     d)
       dOpt="-d"
+      ;;
+    o)
+      dOpt="-o"
       ;;
     n)
       nOpt="-n"
@@ -146,33 +150,52 @@ then
 
     ## setup the new run directory
     $whsPath/linkToTestCase.sh \
-        $cOpt $fOpt $dOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
+        $cOpt $fOpt $oOpt $dOpt $uOpt $nOpt $pOpt . `pwd` `pwd`/$runDir
     origDir=`pwd`
     cd $runDir
     ## always copy the binary
     cp $origDir/$theBinary .
 fi
 
+## potentially different invocations of mpirun. 
+## deal with host differences: put your flavor here
+theHost=`hostname`
 
-## a check for the ifort versus the pg compiler
-useIfort=`ldd $theBinary | grep ifort | wc -l`
-if [ ! $? -eq 0 ] 
-then
-    echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
-    exit 1
+## YELLOWSTONE
+if [[ $theHost == *"ys"* ]] 
+then 
+    echo "Running on yellowstone!"
+    mpirun.lsf ./$theBinary
 fi
-if [ "$useIfort" -gt 0 ] 
-then
-    echo -e "\e[31mDetected intel fortran binary\e[0m"
-    MPIRUN="/opt/openmpi-1.10.0-intel/bin/mpirun --prefix /opt/openmpi-1.10.0-intel"
-else
-    MPIRUN=mpirun
-fi
+
+## HYDRO-C1
+if [[ $theHost == hydro-c1 ]] 
+then 
+    ## a check for the ifort versus the pg compiler
+    useIfort=`ldd $theBinary | grep ifort | wc -l`
+    if [ ! $? -eq 0 ] 
+    then
+        echo -e "\e[31mProblems with executable:\e[0m wrf_hydro.exe"
+        exit 1
+    fi
+    if [ "$useIfort" -gt 0 ] 
+    then
+        echo -e "\e[31mDetected intel fortran binary\e[0m"
+        MPIRUN="/opt/openmpi-1.10.0-intel/bin/mpirun --prefix /opt/openmpi-1.10.0-intel"
+    else
+        MPIRUN=mpirun
+    fi
+    $MPIRUN -np $nMpiTasks ./$theBinary
+fi 
     
-$MPIRUN -np $nMpiTasks ./$theBinary
+## MPI return   
 mpiReturn=$?
 echo -e "\e[36mReturn code: $mpiReturn\e[0m"
-exit $mpiReturn
 
+if [ ! -z $cleanRunDateId ]
+then
+    cd $origDir
+    mv std*.${cleanRunDateId}.* job.*.${cleanRunDateId} ${runDir}/.
+fi
 
 exit $mpiReturn

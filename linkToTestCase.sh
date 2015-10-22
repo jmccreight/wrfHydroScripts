@@ -9,9 +9,15 @@ permission in their run dir) WRF-Hydro test case. You want all their
 dependencies as specified in their namelists (and really nothing more)
 and all the run dependencies (namelists and *TBL files).
 
+Note that all links are created using: ln -s `readlink -e $source` $target
+This means that no links are made to links, only to ultimate destination files
+sources links point to. This gives some protection against sources which are 
+links which change over time.
+
 Options:
- -c Copy instead of link **all files but DOMAIN and forcings**. Useful when you 
-    want to extract/establish a test case from an existing directory where other 
+ -c Copy instead of link **all files but DOMAIN and forcings (and 
+    nudgingTimeSliceObs if -n flag is set)**. Useful when you want
+    to extract/establish a test case from an existing directory where other 
     stuff may live or run different instances of the same domain in different
     run directories but change the namelist and other dependencies besides
     forcings while the runs are occuring.
@@ -20,6 +26,7 @@ Options:
     that these are recognized by the names currently used in the namelists, 
     not by their placement in a DOMAIN/ folder.
  -n Get nudging files: for nudging -cdfn copies all model dependencies when nudging.
+ -o force copy nudgingTimeSliceObs directory. 
  -p write protect the results.
  -u un-write protect and clobber write protected files
 
@@ -46,6 +53,8 @@ Arguments:
 whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
 source $whsPath/helpers.sh
 
+## fix? for links, follow full link "readlink -e"?
+
 ###################################
 ## OPTIONS
 # Defaults first
@@ -55,7 +64,8 @@ writeProtect=1     ## FALSE
 unWriteProtect=1   ## FALSE
 linkForc=0         ## TRUE 
 linkDomain=0         ## TRUE 
-while getopts ":fpuncd" opt; do
+linkNudgeObs=0
+while getopts ":fpuncdo" opt; do
   case $opt in
     u)
       echo -e "\e[41mUN-Write protecting files.\e[0m"
@@ -79,6 +89,10 @@ while getopts ":fpuncd" opt; do
     d)
       echo -e "\e[46mCopying DOMAIN files instead of linking.\e[0m"
       linkDomain=1
+      ;;
+    o)
+      echo -e "\e[46mCopying nudging observation files instead of linking.\e[0m"
+      linkNudgeObs=1
       ;;
     n)
       echo -e "\e[46mGetting nudging files.\e[0m"
@@ -131,11 +145,14 @@ TBLS=`ls --color=auto $sourceDir/*TBL`
 namelists=`ls --color=auto $sourceDir/namelist.hrldas $sourceDir/hydro.namelist`
 if [[ $"getNudgingFiles" -eq 0 ]]
 then
-    nudgeFiles=`ls -d $sourceDir/nudgingTimeSliceObs $sourceDir/nudgingParams.nc`
+    nudgeDirs=`ls -d $sourceDir/nudgingTimeSliceObs`
+    nudgeFiles="$nudgeDirs "`ls $sourceDir/nudgingParams.nc`
     ## This one is definitely going to move into namelist and evnetually get picked up in the 
     ## next section
-    nudgeFiles="$nudgeFiles "`ls -d $sourceDir/netwkReExFile.nc`
+    nudgeFiles="$nudgeFiles "`ls $sourceDir/netwkReExFile.nc`
+    nudgeDirs="$nudgeDirs alksdjfoijweflksjdflakjdsfalkdsfjfniufehg"  ## this is literally a fake out to us isInSet
 else 
+    nudgeDirs=''
     nudgeFiles=''
 fi
 echo $namesInFile
@@ -152,18 +169,37 @@ do
     if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $theTarget; fi
     if [[ $linkOrCopy == 'link' ]]
     then
-        ln -sf $theSource .
+        ln -sf `readlink -e $theSource` $theTarget
     else 
         if [[ -d $theSource ]] ## directory
         then
-            ## cp --remove-destination disrepsects permissions! so write this.
-            if [[ -h $theTarget ]]; then rm -r $theTarget; fi  ## if symlink 
-            cp -rH $theSource .
-        else
+
+            ## the nudging observation files require -o to force copy
+            if [[ $getNudgingFiles -eq 0 ]] 
+            then
+                isInSet "$theSource" "$nudgeDirs"
+                test0=$?
+            else 
+                test0=1
+            fi
+
+            if [[ $test0 -eq 0 ]] && [[ $linkNudgeObs -eq 0 ]]  ##$source is nudging obs dir and not forcing a copy
+            then
+                if [[ -h $theTarget ]]; then rm -r $theTarget; fi  ## if symlink, remove the target
+                ln -sf `readlink -e $theSource` $theTarget
+            else ## source is not nudging obst dir
+                ## cp --remove-destination disrepsects permissions! so write this.
+                if [[ -h $theTarget ]]; then rm -r $theTarget; fi  ## if symlink 
+                cp -rH $theSource .
+            fi
+
+        else  ## the source is not a directory
+
             if [[ -h $theTarget ]]; then rm $theTarget; fi  ## if symlink
             cp -H $theSource .
         fi
     fi
+
     if [[ $writeProtect -eq 0 ]]; then chmod 555 $theTarget; fi
     ## why in god's name you can cp -r OVER a write protected dir, i do not know.
     if [[ -d $theSource ]]; then chmod 555 $theTarget/*; fi
@@ -183,7 +219,7 @@ function linkReqFiles {
     echo -e "\e[7m $file \e[0m"
     IFS=$'\n'
     namesInFile=`egrep "('|\")" $file`
-l
+
     for ii in $namesInFile
     do
         IFS=$'\n'
@@ -210,7 +246,7 @@ l
             then
                 ## remove symlinks before replacing them, esp for directories
                 if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
-                ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+                ln -s `readlink -e $sourceDir/$thePath/$theFile` $targetDir/$thePath/$theFile
             else 
                 ## Either: require -f flag to force copy of forcings, otherwise always link them
                 [[ $nlstItem == "INDIR" ]] && [[ $linkForc -eq 0 ]]
@@ -223,7 +259,7 @@ l
                 if [ $test1 -eq 0 ] || [ $test2 -eq 0 ]  ## or
                 then 
                     if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
-                    ln -s $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+                    ln -s `readlink -e $sourceDir/$thePath/$theFile` $targetDir/$thePath/$theFile
                 else 
                     ## cp --remove-destination is BAD, disrespects permissions
                     if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi

@@ -46,12 +46,20 @@ function qCleanRun {
     $whsPath/qCleanRun.sh $@
 }
 
+function bCleanRun {
+    $whsPath/bCleanRun.sh $@
+}
+
 function compileAll {
-    $whsPath/compileAll.sh $@
+    "$whsPath"/compileAll.sh $@
 }
 
 function regTest {
     $whsPath/regTest.sh $@
+}
+
+function hgrep {
+    $whsPath/hgrep.sh $@
 }
 
 
