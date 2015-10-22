@@ -44,11 +44,13 @@ workingDir=`pwd`
 theDate=`date '+%Y-%m-%d_%H-%M-%S'`
 jobFile=job.qCleanRun.$theDate
 
+## fix: can I make the job name more informative? 
+
 echo "#!/bin/bash
 #PBS -l nodes=$nNodes:ppn=16,walltime=20:00:00
 #PBS -k oe
-#PBS -o logs/stdout.$theDate.txt
-#PBS -e logs/stderr.$theDate.txt
+#PBS -o stdout.$theDate.txt
+#PBS -e stderr.$theDate.txt
 #PBS -N wrfhydro
 
 source ~/.bashrc
@@ -59,10 +61,11 @@ modelReturn=$?
 rm $jobFile
 exit $modelReturn" > $jobFile
 
-qsub $jobFile
+qJobId=`qsub $jobFile`
+echo $qJobId
+## fix: want to put this into a file in the run directory... 
+## but theres some complex parsing of the arguments to get that... it's in cleanRun.
+#qJobId=`echo $qJobId | cut -d '.' -f 1`
+#echo "$sJobId" > $runDir/qsubJobId.log
 
 exit 0
-
-
-
-

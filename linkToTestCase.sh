@@ -248,6 +248,8 @@ linkReqFiles hydro.namelist
 if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/*; fi
 if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/; fi
 
+## fix: make a summary of where all copies/links point?
+
 exit 0
 
 
