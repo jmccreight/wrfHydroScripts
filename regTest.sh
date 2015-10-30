@@ -4,6 +4,10 @@ help='
 
 regTest.sh :: regression tests for WRF-Hydro
 
+Options:
+q) Run the job under qsub and wait for the results.
+b) NOT TESTED!!! Run the job under bsub and wait for the results... NOT TESTED!!! 
+
 Arguments:
 1) The binary to test
 2) [optional] The regression test case as a path/directory or 
@@ -47,6 +51,9 @@ while getopts ":q" opt; do
   case $opt in
     q)
       cleanRunScript=qCleanRun.sh
+      ;;
+    b)
+      cleanRunScript=bCleanRun.sh
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -119,15 +126,28 @@ else
         echo -e "\e[31mMore than one run directory detected. Run directory in regression tests is identified by a unique hydro.namelist in a directory below the regression test. Please fix.\e[0m"
         exit 1
     fi
-    testRunDir=`dirname $testRunDir`
+        testRunDir=`dirname $testRunDir`
 fi
+
 
 ## Where is the attempt at the test to be made?
 theDate=`date '+%Y-%m-%d_%H:%M:%S'`
 nCores=`ls $testRunDir/VERIFICATION/diag_hydro.* | wc -l`
 attemptDir=`grep attemptDir $configFile | cut -d'=' -f2 | tr -d ' '`
 attemptDir=$attemptDir/`basename $theBinary`.${nCores}cores.$theDate.`basename $testDir`
+
 attemptRunDir=${attemptDir}/`basename $testRunDir`
+if [[ "$testRunDir" == "$testDir" ]] 
+then
+    attemptRunDir=${attemptDir}/
+fi
+
+## Is this a nudging case?
+linkFlags=''
+nudgingTest=`ls $testRunDir/nudging* 2>/dev/null | wc -l`
+if [[ $nudgingTest ]]; then linkFlags='n'; fi
+if [ ! -z $linkFlags ]; then linkFlags="-${linkFlags}"; fi
+## Other cases can be added similarly
 
 echo
 echo -e "\e[7;44;97mSetup\e[0m"
@@ -136,13 +156,16 @@ echo -e "The test directory       : $testDir"
 echo -e "The test run directory   : $testRunDir"
 echo -e "The attempt directory    : $attemptDir"
 echo -e "The attempt run directory: $attemptRunDir"
+echo -e "linkFlags: $linkFlags"
+
 
 ## Test case linking
 ## These test are supposed to be stable, so only linking should be needed.
 echo
 echo -e "\e[7;44;97mLinking\e[0m"
 linkTest=`echo $testRunDir | tr -d ' ' | cut -c$((${#testDir}+2))-`
-$whsPath/linkToTestCase.sh $linkTest $testDir $attemptDir
+if [[ -z $linkTest ]]; then linkTest="."; fi
+$whsPath/linkToTestCase.sh $linkFlags $linkTest $testDir $attemptDir
 if [ ! $? -eq 0 ] 
 then
     echo -e "\e[31mLinking failed, please investigate.\e[0m"
@@ -166,16 +189,7 @@ else
     qJobId=`$whsPath/$cleanRunScript $nCores`
     qJobId=`echo $qJobId | cut -d '.' -f 1`
     echo $qJobId
-    ## That's so easy! (NOT)
-    qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
-    while [[ ! $qJobStatus == C ]]  
-    do
-        qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
-        sleep 20
-    done
-    qTrace=`tracejob $qJobId 2> /dev/null`
-    ## certainly not easy to pars stuff coming out of torque... 
-    modelSuccess=`echo "$qTrace" | grep 'Exit_status' | head -1 | sed 's/ \+/\n/g' | grep 'Exit_status' | cut -d '=' -f2`
+    modelSuccess=`monitorQsubJob $qJobId`
 fi
 
 if [[ ! $modelSuccess -eq 0 ]] 
@@ -184,12 +198,13 @@ then
     exit $modelSuccess
 fi
 
-
 ## compare the output
 ## what if OUPUT dir is specified by the namelist.hrldas?
 echo -e "\e[7;44;97mOutput comparison:\e[0m"
 $whsPath/testNLast.sh 1 $testRunDir/VERIFICATION 
 retComp=$?
+
+## fix do we want to link the VERIFICATION dir into the attempt director, ensuring it is write protected?
 
 echo -e "\e[7;44;97mOutput comparison results:\e[0m"
 if [ $retComp -eq 0 ]

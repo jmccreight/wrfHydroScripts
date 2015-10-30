@@ -18,6 +18,14 @@ function henv {
     printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME)" | egrep -v PWD
 }
 
+function lrl { ## "list readlink"
+    for i in "$@"
+    do
+        echo "$i ->"
+        ls -lahd `readlink -e $i`
+    done
+}
+
 function plotFrxst {
     $whsPath/plotFrxst.sh $@
 }

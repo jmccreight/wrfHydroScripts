@@ -164,12 +164,12 @@ theHost=`hostname`
 ## YELLOWSTONE
 if [[ $theHost == *"ys"* ]] 
 then 
-    echo "Running on yellowstone!"
+    echo "Running on yellowstone!"   
     mpirun.lsf ./$theBinary
 fi
 
 ## HYDRO-C1
-if [[ $theHost == hydro-c1 ]] 
+if [[ $theHost == *"hydro-c1"* ]] 
 then 
     ## a check for the ifort versus the pg compiler
     useIfort=`ldd $theBinary | grep ifort | wc -l`
@@ -185,13 +185,15 @@ then
     else
         MPIRUN=mpirun
     fi
+    echo "$MPIRUN -np $nMpiTasks ./$theBinary"
     $MPIRUN -np $nMpiTasks ./$theBinary
-fi 
+fi
     
 ## MPI return   
 mpiReturn=$?
 echo -e "\e[36mReturn code: $mpiReturn\e[0m"
 
+## THis dosent work under qsub
 if [ ! -z $cleanRunDateId ]
 then
     cd $origDir

@@ -32,10 +32,11 @@ while getopts ":fpuncdor" opt; do
 done
 shift "$((OPTIND-1))" 
 
+source $whsPath/helpers.sh
+
 IFS=$'\n'
-nCores=$1
-## fix this needs some rounding maths... apparently not trivial w bc
-nNodes=`echo "$nCores/16" | bc`
+nCores=`echo $1 | bc`
+nNodes=`ceiling $nCores/16`
 #echo $nNodes
 #echo "$allArgs"
 
@@ -48,7 +49,7 @@ jobFile=job.qCleanRun.$theDate
 
 echo "#!/bin/bash
 #PBS -l nodes=$nNodes:ppn=16,walltime=20:00:00
-#PBS -k oe
+###PBS -k oe
 #PBS -o stdout.$theDate.txt
 #PBS -e stderr.$theDate.txt
 #PBS -N wrfhydro

@@ -107,21 +107,27 @@ function isInSet {
 round() {
     # $1 is expression to round (should be a valid bc expression)
     # $2 is number of decimal figures (optional). Defaults to three if none given
-    [ !  -z $1 ] || return 1
-    local df=${2:-0}
-    printf '%.*f\n' "$df" "$(bc -l <<< "a=$1; if(a>0) a+=5/10^($df+1) else if (a<0) a-=5/10^($df+1); scale=$df; a/1")"
+    [ ! -z $1 ] || return 1
+    scale=${#1}
+    in=`echo "scale=$scale;$1" | bc`
+    local df=${2:-$scale}
+    printf '%.*f\n' "$df" "$(bc -l <<< "a=$in; if(a>0) a+=5/10^($df+1) else if (a<0) a-=5/10^($df+1); scale=$df; a/1")"
     return 0
 }
+
 
 ceiling() {
     # $1 is expression to ceiling (should be a valid bc expression)
     [ !  -z $1 ] || return 1
-    in=$1
-    inRound=`round $in`
+    scale=${#1}
+    in=`echo "scale=$scale;$1" | bc`
+    #echo in $in
+    inRound=`round $in 0`
     isInteger=`echo "$in == $inRound" | bc`
-    isNegative=`echo "$in < 0.0" | bc`
-    ## the result here is opposite the bash convention
-    if [[ $isInteger -eq 1 ]] || [[ $isNegative -eq 1 ]] 
+    if [[ $isInteger -eq 1 ]]; then echo $inRound; return 0; fi
+    diff=`echo $inRound - $in | bc`
+    roundUp=`echo "$diff >= 0" | bc`
+    if [[ $roundUp -eq 1 ]] 
     then 
         echo $inRound
     else 
@@ -130,3 +136,20 @@ ceiling() {
     return 0
 }
 
+
+function monitorQsubJob {
+# $1 is the job id
+# return value is the model return value
+    local qJobId=$1
+    ## That's so easy! (NOT)
+    local qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
+    while [[ ! $qJobStatus == C ]]  
+    do
+        qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
+        sleep 20
+    done
+    local qTrace=`tracejob $qJobId 2> /dev/null`
+    ## certainly not easy to pars stuff coming out of torque... 
+    local modelSuccess=`echo "$qTrace" | grep 'Exit_status' | head -1 | sed 's/ \+/\n/g' | grep 'Exit_status' | cut -d '=' -f2`
+    return $modelSuccess
+}

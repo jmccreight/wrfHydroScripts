@@ -55,45 +55,49 @@ echo -e "Relevant environment variables:"
 henv
 echo 
 
-if [[ $theBranch == "nudging" ]]
+nudingBranchSet='nudging conusNudging'
+if isInSet $theBranch "$nudingBranchSet"
 then
 
+    branchTag=''
+    if [[ ! $theBranch == 'nudging' ]]; then branchTag="${theBranch}."; fi
 
     echo
     echo -e "\e[7;47;39mnoNudging\e[0m"
     export PRECIP_DOUBLE=0
     export WRF_HYDRO_NUDGING=0
     cleanCompile
-    cp Run/wrf_hydro.exe Run/wrf_hydro.noNudging.exe
-    ls -lah --color=auto Run/wrf_hydro.noNudging.exe
+    cp Run/wrf_hydro.exe Run/wrf_hydro.noNudging.${branchTag}exe
+    ls -lah --color=auto Run/wrf_hydro.noNudging.${branchTag}exe
 
     echo
     echo -e "\e[7;47;39mnoNudging_doublePrecip\e[0m"
     export PRECIP_DOUBLE=1
     export WRF_HYDRO_NUDGING=0
     cleanCompile
-    cp Run/wrf_hydro.exe Run/wrf_hydro.noNudging_doublePrecip.exe
-    ls -lah --color=auto Run/wrf_hydro.noNudging_doublePrecip.exe
+    cp Run/wrf_hydro.exe Run/wrf_hydro.noNudging_doublePrecip.${branchTag}exe
+    ls -lah --color=auto Run/wrf_hydro.noNudging_doublePrecip.${branchTag}exe
 
     echo
     echo -e "\e[7;47;39mnudging\e[0m"
     export PRECIP_DOUBLE=0
     export WRF_HYDRO_NUDGING=1
     cleanCompile
-    cp Run/wrf_hydro.exe Run/wrf_hydro.nudging.exe    
-    ls -lah --color=auto Run/wrf_hydro.nudging.exe
+    cp Run/wrf_hydro.exe Run/wrf_hydro.nudging.${branchTag}exe    
+    ls -lah --color=auto Run/wrf_hydro.nudging.${branchTag}exe
+    exit 0
 fi
 
 if [[ $theBranch == "master" ]]
 then
     echo "Compiling master"
-
     echo
     export PRECIP_DOUBLE=0
     export WRF_HYDRO_NUDGING=0
     cleanCompile
     cp Run/wrf_hydro.exe Run/wrf_hydro.master.exe
     ls -lah --color=auto Run/wrf_hydro.master.exe
+    exit 0
 fi
 
-exit 0
+exit 1

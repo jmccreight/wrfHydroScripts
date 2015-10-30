@@ -6,14 +6,14 @@
 
 ## fix: if only one argument, just run unary tests?? it's easy enough to specify "." as the test dir.
 
-help="
+help='
 Arguments
 1) how many of each file to compare going backwards from the last one (as N in "tail -N").
 2) OPTIONAL second argument is the (relative or abs) path to the verification data. 
 3) OPTIONAL but need 2 if you use 3: third argument is the (relative or abs) path to your 
-            output, if missing assuming you're in the run or ouput directory.
+            output, if missing assuming youre in the run or ouput directory.
 
-"
+'
 
 whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
 source $whsPath/helpers.sh

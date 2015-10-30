@@ -190,13 +190,13 @@ do
             else ## source is not nudging obst dir
                 ## cp --remove-destination disrepsects permissions! so write this.
                 if [[ -h $theTarget ]]; then rm -r $theTarget; fi  ## if symlink 
-                cp -rH $theSource .
+                cp -rL $theSource .
             fi
 
         else  ## the source is not a directory
 
             if [[ -h $theTarget ]]; then rm $theTarget; fi  ## if symlink
-            cp -H $theSource .
+            cp -L $theSource .
         fi
     fi
 
@@ -263,7 +263,7 @@ function linkReqFiles {
                 else 
                     ## cp --remove-destination is BAD, disrespects permissions
                     if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
-                    cp -rH $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
+                    cp -rL $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
                 fi
             fi
             if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/$thePath/$theFile; fi
