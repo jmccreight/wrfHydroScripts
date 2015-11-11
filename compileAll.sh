@@ -55,7 +55,7 @@ echo -e "Relevant environment variables:"
 henv
 echo 
 
-nudingBranchSet='nudging conusNudging'
+nudingBranchSet='nudging conusNudging nudgingRebase'
 if isInSet $theBranch "$nudingBranchSet"
 then
 
