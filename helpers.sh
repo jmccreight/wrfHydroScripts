@@ -16,6 +16,7 @@ function checkExist {
 
 
 function notCommented {
+    ## assumes that ! is the comment... could make that an argument.
     noBlank=`echo $1 | tr -d ' '`
     if [[ $noBlank == !* ]]; then return 1; else return 0; fi
 }
@@ -143,11 +144,14 @@ function monitorQsubJob {
     local qJobId=$1
     ## That's so easy! (NOT)
     local qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
+    echo 'Waiting for qsub'
     while [[ ! $qJobStatus == C ]]  
     do
+        printf '.'
         qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
-        sleep 20
+        sleep 6
     done
+    echo ''
     local qTrace=`tracejob $qJobId 2> /dev/null`
     ## certainly not easy to pars stuff coming out of torque... 
     local modelSuccess=`echo "$qTrace" | grep 'Exit_status' | head -1 | sed 's/ \+/\n/g' | grep 'Exit_status' | cut -d '=' -f2`

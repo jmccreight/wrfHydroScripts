@@ -37,6 +37,7 @@ then
         mv -f *.LDASOUT_DOMAIN*    $1/.
         mv -f diag_hydro.*         $1/.
         mv -f GW_*.txt             $1/.
+#        mv -f 
     else 
         echo "No such directory: " $1
         echo "Aborting"
