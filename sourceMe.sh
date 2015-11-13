@@ -42,6 +42,14 @@ function linkToTestCase {
     $whsPath/linkToTestCase.sh $@
 }
 
+function standardizeTestCase {
+    $whsPath/standardizeTestCase.sh $@
+}
+
+function getTestFiles {
+    $whsPath/getTestFiles.sh $@
+}
+
 function testNLast {
     $whsPath/testNLast.sh $@
 }

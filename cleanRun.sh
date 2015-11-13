@@ -197,7 +197,7 @@ echo -e "\e[36mReturn code: $mpiReturn\e[0m"
 if [ ! -z $cleanRunDateId ]
 then
     cd $origDir
-    mv std*.${cleanRunDateId}.* job.*.${cleanRunDateId} ${runDir}/.
+    mv ${cleanRunDateId}.* ${runDir}/.
 fi
 
 exit $mpiReturn

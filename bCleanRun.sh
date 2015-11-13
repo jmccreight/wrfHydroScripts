@@ -44,18 +44,18 @@ nNodes=`ceiling $nCores/16`
 workingDir=`pwd`
 
 theDate=`date '+%Y-%m-%d_%H-%M-%S'`
-jobFile=job.bCleanRun.$theDate
+jobFile=$theDate.bCleanRun.job
 
 echo "#!/bin/bash
-#BSUB -P P48500028                         # Project 99999999
-#BSUB -x                                           # exclusive use of node (not_shared)
-#BSUB -n $nCores                            # number of total (MPI) tasks
+#BSUB -P P48500028                      # Project 99999999
+#BSUB -x                                # exclusive use of node (not_shared)
+#BSUB -n $nCores                        # number of total (MPI) tasks
 #BSUB -R \"span[ptile=16]\"             # run a max of  tasks per node
-#BSUB -J  wh_nudging                       # job name
-#BSUB -o stdout.$theDate.%J                          # output filename
-#BSUB -estderr.$theDate.%J                           # error filename
-#BSUB -W 12:00                                 # wallclock time (hrs:mins)
-#BSUB -q premium                           # queue
+#BSUB -J  wh_nudging                    # job name
+#BSUB -o $theDate.%J.stdout             # output filename
+#BSUB -e $theDate.%J.stderr             # error filename
+#BSUB -W 12:00                          # wallclock time (hrs:mins)
+#BSUB -q premium                        # queue
 
 source ~/.bashrc
 

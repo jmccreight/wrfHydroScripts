@@ -35,7 +35,7 @@ then
         mv -f frxst_pts_out.txt    $1/.
         mv -f qstrmvolrt_accum.txt $1/.
         mv -f *.LDASOUT_DOMAIN*    $1/.
-        mv -f diag_hydro.000*      $1/.
+        mv -f diag_hydro.*         $1/.
         mv -f GW_*.txt             $1/.
     else 
         echo "No such directory: " $1
@@ -57,7 +57,7 @@ else
     rm -f frxst_pts_out.txt
     rm -f volrt_accum.txt
     rm -f *.LDASOUT_DOMAIN*
-    rm -f diag_hydro.000*
+    rm -f diag_hydro.*
     rm -f GW_*.txt
 fi
 
