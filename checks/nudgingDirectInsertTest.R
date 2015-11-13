@@ -10,14 +10,12 @@ options(warn=1)
 ## 3) OPTIONAL mkPlot, default=FALSE. Only summary stats are printed. 
 args <- commandArgs(TRUE)
 
-## arg 1: huc
 runDir <- args[1]
 if(is.na(runDir)) {
   cat("First argument 'runDir' is required\n")
   q(status=1)
 }
 
-## arg 2: inPath
 nCores <- as.integer(args[2])
 if(is.na(nCores)) nCores <- 1
 ## setup multicore
