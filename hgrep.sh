@@ -1,22 +1,22 @@
 #!/bin/bash
 
-searchStr=("$@")
-
 whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
 cd $whmPath/trunk/NDHMS/
-echo $whmPath :: "${searchStr[@]}"
+echo $whmPath :: $@
 
 
-egrep -s "${searchStr[@]}" */*.inc
+grep -s $@ */*.inc
 
-egrep -s "${searchStr[@]}" */*.F
-egrep -s "${searchStr[@]}" */*/*.F
-egrep -s "${searchStr[@]}" */*/*/*.F
-egrep -s "${searchStr[@]}" */*/*/*/*.F
+grep -s $@ */*.F
+grep -s $@ */*/*.F
+grep -s $@ */*/*/*.F
+grep -s $@ */*/*/*/*.F
 
-egrep -s "${searchStr[@]}" */Makefile
-egrep -s "${searchStr[@]}" */*/Makefile
-egrep -s "${searchStr[@]}" */*/*/Makefile
-egrep -s "${searchStr[@]}" */*/*/*/Makefile
+grep -s $@ */Makefile
+grep -s $@ */*/Makefile
+grep -s $@ */*/*/Makefile
+grep -s $@ */*/*/*/Makefile
+
+grep -s $@ arc/*
 
 exit 0

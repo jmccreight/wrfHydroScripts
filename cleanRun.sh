@@ -155,6 +155,8 @@ then
     cd $runDir
     ## always copy the binary
     cp $origDir/$theBinary .
+else 
+    $whsPath/cleanup.sh $rOpt
 fi
 
 ## potentially different invocations of mpirun. 
@@ -193,7 +195,7 @@ fi
 mpiReturn=$?
 echo -e "\e[36mReturn code: $mpiReturn\e[0m"
 
-## THis dosent work under qsub
+## THis dosent work under qsub because stdout/err arent written untill after the job completes.
 if [ ! -z $cleanRunDateId ]
 then
     cd $origDir

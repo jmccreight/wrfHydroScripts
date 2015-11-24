@@ -1,16 +1,16 @@
 #!/bin/bash
 
+## fix: check for .wrfHydroScripts?
+
 whsPath=`grep "wrfHydroScripts" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '`
 cleanRunHelp=`$whsPath/cleanRun.sh | tail -n+2`
 
 help="
 bCleanRun :: help
 
-Purpose: submit cleanRun calls to qsub automatically calculating the number of nodes
-requested in the header from the number of cores/mpitasks askedfor and divided 
-by 16. (Assumes the job is to be run from the current dir, where the binary is found.)
-
-Other header items to qsub may need adjusted on an individual basis.
+Purpose: submit cleanRun calls to bsub automatically 
+Header items to qsub may need adjusted on an individual basis in this script.
+(Assumes the job is to be run from the current dir, where the binary is found.)
 
 Arguments as for cleanRun...
 $cleanRunHelp
@@ -46,18 +46,14 @@ workingDir=`pwd`
 theDate=`date '+%Y-%m-%d_%H-%M-%S'`
 jobFile=$theDate.bCleanRun.job
 
-echo "#!/bin/bash
-#BSUB -P P48500028                      # Project 99999999
-#BSUB -x                                # exclusive use of node (not_shared)
-#BSUB -n $nCores                        # number of total (MPI) tasks
-#BSUB -R \"span[ptile=16]\"             # run a max of  tasks per node
-#BSUB -J  wh_nudging                    # job name
-#BSUB -o $theDate.%J.stdout             # output filename
-#BSUB -e $theDate.%J.stderr             # error filename
-#BSUB -W 12:00                          # wallclock time (hrs:mins)
-#BSUB -q premium                        # queue
+bsubHeader=`egrep '^#BSUB' ~/.wrfHydroScripts`
+bsubHeader=`echo "$(eval "echo \"$bsubHeader\"")"`
 
-source ~/.bashrc
+echo "#!/bin/bash
+$bsubHeader
+
+#source ~/.bashrc
+source $whsPath/helpers.sh
 
 ## To communicate where the stderr/out and job scripts are and their ID
 export cleanRunDateId=${theDate}

@@ -47,7 +47,7 @@ https://github.com/integrations/feature/build
 ## set of ouput files to check/test on
 
 cleanRunScript=cleanRun.sh
-while getopts ":q" opt; do
+while getopts ":bq" opt; do
   case $opt in
     q)
       cleanRunScript=qCleanRun.sh
@@ -178,18 +178,27 @@ cd $attemptRunDir
 ln -s `basename $theBinary` wrf_hydro.exe
 
 ## run the model
-echo
 echo -e "\e[7;44;97mRun the model, using $nCores cores.\e[0m"
 if [[ $cleanRunScript == cleanRun.sh ]]
 then
     $whsPath/$cleanRunScript $nCores
     modelSuccess=$?
 else
-    ## else job was submitted to qsub
-    qJobId=`$whsPath/$cleanRunScript $nCores`
-    qJobId=`echo $qJobId | cut -d '.' -f 1`
-    echo $qJobId
-    modelSuccess=`monitorQsubJob $qJobId`
+    if [[ $cleanRunScript == bCleanRun.sh ]]
+    then
+        # example: Job <300629> is submitted to queue <premium>.
+        bJobId=`$whsPath/$cleanRunScript $nCores`
+        bJobId=`echo $bJobId | cut -d '<' -f2 | cut -d'>' -f1`
+        echo $bJobId -------
+        monitorBsubJob $bJobId
+        modelSuccess=$?
+    else 
+        ## else job was submitted to qsub
+        qJobId=`$whsPath/$cleanRunScript $nCores`
+        qJobId=`echo $qJobId | cut -d '.' -f 1`
+        echo $qJobId
+        modelSuccess=`monitorQsubJob $qJobId`
+    fi
 fi
 
 if [[ ! $modelSuccess -eq 0 ]] 

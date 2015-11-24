@@ -41,35 +41,75 @@ if(!file.exists(runDir)) {
 ## Bring in tau from nudgingParams.nc and compare to NOAH_TIMESTEP in namelist.hrldas.
 
 CheckDirectInsert <- function(runDir, parallel=FALSE) {
-
-  ## identify if frxst pts exists
+  
+  #############
+  ## identify if frxst pts exists, if not only get model time range
   frxstFile <- list.files(runDir, pattern='frxst_pts_out.txt', full=TRUE)
   if(!length(frxstFile))
     frxstFile <- list.files(paste0(runDir,'/VERIFICATION'), pattern='frxst_pts_out.txt', full=TRUE)
+
   if(length(frxstFile)) {
     modelDf <- ReadFrxstPts(frxstFile)
+    minModelTime <- min(modelDf$POSIXct)
+    maxModelTime <- max(modelDf$POSIXct)
   } else {
-  ## if not frxst_pts use CHRTOUT_DOMAIN
-    warning('not yet configured use of CHRTOUT_DOMAIN files', .immediate=TRUE)
-    ## ... deeal with this later.
-    ## dont forget the time offest in the name of the file.
-    ## loop through the stations, pulling each from the file individually?
+    ## if not frxst_pts use CHRTOUT_DOMAIN
+    chrtFiles <- list.files(runDir, pattern='CHRTOUT_DOMAIN', full=TRUE)
+    if(!length(chrtFiles))
+      chrtFiles <- list.files(paste0(runDir,'/VERIFICATION'), pattern='CHRTOUT_DOMAIN', full=TRUE)
+    if(!length(chrtFiles))
+      warning(paste0("Neither frxst_pts_out.txt nor *CHRTOUT_DOMAIN* files found in ",
+                     runDir,' nor in ',runDir,'/VERIFICATION, please check.'),
+              immediate.=TRUE)
+    chrtTimes <- as.POSIXct(plyr::laply(strsplit(basename(chrtFiles),'\\.'),'[[', 1),
+                            format='%Y%m%d%H%M', tz='UTC')
+    minModelTime <- min(chrtTimes)
+    maxModelTime <- max(chrtTimes)
   }
-  
+
+  #############
   ## identify the observations
   obsFiles <- list.files(paste0(runDir,'/nudgingTimeSliceObs'),
                          pattern='.15min.usgsTimeSlice.ncdf', full=TRUE)
   obsTimes <- as.POSIXct(substr(basename(obsFiles),1,19),
                          format='%Y-%m-%d_%H:%M:%S', tz='UTC')
+  ## match up the obs and modeled pairs.
   ## strictly greater is correct for cold start runs as DA is not applied at the
   ## initial time.
-  whObsInModel <- which(obsTimes > min(modelDf$POSIXct) &
-                        obsTimes <= max(modelDf$POSIXct) )
+  print(minModelTime)
+  print(maxModelTime)
+  whObsInModel <- which(obsTimes >  minModelTime &
+                        obsTimes <= maxModelTime )
   obsDf <- plyr::ldply(obsFiles[whObsInModel], ReadNcTimeSlice, .parallel=parallel)
+  print(nrow(obsDf))
+  print(table(obsDf$dateTime))
+              
+  ## ###########
+  ## if using CHRTOUT files, process the data after getting the obs in, to subset
+  ## the full channel on to the obs as it is read in.
+  if(!length(frxstFile)) {  
+    ## need the routelink file to match the gages in ob
+    ## parse hydro.namelist for the name of the Route_Link file.
+    rlMatches <-
+      gsub(" ","",grep('(route_link_f)',readLines(paste0(runDir,"/hydro.namelist")), value=TRUE))
+    rlMatches <- grep('^[^!]*$', rlMatches, value=TRUE)
+    rlFile <- strsplit(rlMatches,'\\"')[[1]][2]
+    gages <- ncdump(paste0(runDir,'/',rlFile),'gages',quiet=TRUE)
+    whGages <- which(gages %in% obsDf$site_no)
+    ## loop through the stations, pulling each from the file individually?
+    GetModeledGages <- function(chrtFile)
+      data.frame(POSIXct=as.POSIXct(plyr::laply(strsplit(basename(chrtFile),'\\.'),'[[', 1),
+                    format='%Y%m%d%H%M', tz='UTC'),
+                 st_id=gages[whGages],
+                 q_cms=ncdump(chrtFile, 'streamflow',quiet=TRUE)[whGages] )
+    modelDf <- plyr::ldply(chrtFiles, GetModeledGages, .parallel=parallel)
+  }
+ 
 
   ## match the obs to the model  
   ## 1) throw out obs which are not on the model times
   obsDf <- subset(obsDf, dateTime %in% modelDf$POSIXct)
+  print(nrow(obsDf))
   ## 2) Throw out stations from the model which are not in the obs
   modelDf <- subset(modelDf, trimws(st_id) %in% trimws(obsDf$site_no))
   ## 3) Throw out stations from the obs which are not in the model
@@ -78,14 +118,17 @@ CheckDirectInsert <- function(runDir, parallel=FALSE) {
   ## 4) prepare for merging: standardize the time and site variables
   names(obsDf)[which(names(obsDf)=='dateTime')] <- 'POSIXct'
   names(obsDf)[which(names(obsDf)=='site_no')] <- 'st_id'
+  names(obsDf)[which(names(obsDf)=='code')] <- 'quality'
   modelDf$st_id <- trimws(modelDf$st_id)
   obsDf$st_id <- trimws(obsDf$st_id)
   names(modelDf)[which(names(modelDf)=='q_cms')] <- 'discharge.cms'
   obsDf$kind <- 'obs'
   modelDf$kind <- 'model'
+  modelDf$quality <- NA
+  
   
   ## 6
-  theCols <- c('POSIXct','st_id','discharge.cms','kind')
+  theCols <- c('POSIXct','st_id','discharge.cms','kind','quality')
   comboDf <- rbind(obsDf[,theCols], modelDf[,theCols])
 
   ## pair
@@ -98,6 +141,7 @@ CheckDirectInsert <- function(runDir, parallel=FALSE) {
     data.frame(POSIXct=dd$POSIXct[1],
                st_id=dd$st_id[1],
                obs=dd$discharge.cms[which(dd$kind=='obs')],
+               obsQuality=dd$quality[which(dd$kind=='obs')],
                model=dd$discharge.cms[which(dd$kind=='model')])
   }
   pairDf <- plyr::ddply(comboDf, plyr::.(st_id, POSIXct), ExtractPair, .parallel=parallel)
@@ -107,18 +151,24 @@ CheckDirectInsert <- function(runDir, parallel=FALSE) {
 
 ## get the data
 pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1)
+pairDf$validObs <- 'Invalid Obs'
+pairDf$validObs[which(pairDf$obsQuality > 0)] <- 'Questionable Obs'
+pairDf$validObs[which(pairDf$obsQuality == 100)] <- 'Valid Obs'
 
 cat("\nThe number of observations nudged: ", nrow(pairDf),'\n')
 cat("Quantiles of modeled-observed (errors) for nudging:\n")
-quantile(pairDf$err, seq(0,1,.1))
+quantile(subset(pairDf, validObs=='Valid Obs')$err, seq(0,1,.1))
 
 if(mkPlot) {
   ## check if the rundir is write protected, write it to ~ if it is.
   suppressPackageStartupMessages(library(ggplot2))
-  ggplot(pairDf, aes(x=POSIXct, y=err, color=st_id)) + geom_line()
-  ggplot(pairDf, aes(x=err)) + geom_histogram()
+  ggplot(pairDf, aes(x=obs, y=model)) +
+    geom_point() +
+    geom_abline() +
+    facet_wrap(~validObs, ncol=2, scales='free') +
+    theme_bw(base_size=21)
 }
 
-retValue <- if(any(abs(pairDf$err)>.001)) 1 else 0
+retValue <- if(any(abs(subset(pairDf, obs>0)$err)>.001)) 1 else 0
 
 q(status=retValue)

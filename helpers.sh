@@ -144,7 +144,7 @@ function monitorQsubJob {
     local qJobId=$1
     ## That's so easy! (NOT)
     local qJobStatus=`qstat $qJobId | tail -1 | sed 's/ \+/ /g' | cut -d ' ' -f5`
-    echo 'Waiting for qsub'
+    echo "Waiting for qsub job: $qJobId"
     while [[ ! $qJobStatus == C ]]  
     do
         printf '.'
@@ -157,3 +157,36 @@ function monitorQsubJob {
     local modelSuccess=`echo "$qTrace" | grep 'Exit_status' | head -1 | sed 's/ \+/\n/g' | grep 'Exit_status' | cut -d '=' -f2`
     return $modelSuccess
 }
+
+
+function monitorBsubJob {
+# $1 is the job id
+# return value is the model return value
+    local bJobId=$1
+    local bHist=`bhist -la $bJobId`
+    local whRunlimit=`echo "$bHist" | grep -n RUNLIMIT | cut -d':' -f1`
+    local bJobStatus=`echo "$bHist" | tail -n+$((whRunlimit)) | grep -i exit | wc -l`
+    echo "Waiting for bsub job: $bJobId"
+    while [[ $bJobStatus -eq 0 ]]  
+    do
+        printf '.'
+        bHist=`bhist -la $bJobId`
+        whRunlimit=`echo "$bHist" | grep -n RUNLIMIT | cut -d':' -f1`
+        bJobStatus=`echo "$bHist" | tail -n+$((whRunlimit)) | grep -i exit | wc -l`
+        sleep 6
+    done
+    ## certainly not easy to parse stuff coming out 
+    local modelExited=`echo $bHist | grep Exited`
+    local exitCode=`echo $modelExited | tr ' ' '\n' | grep -n code | cut -d':' -f1`
+
+    if [ ! -z $exitCode ] 
+    then
+        exitCode=`echo $modelExited | tr ' ' '\n' | tail -n+$(($exitCode+1)) | head -1 | cut -d'.' -f1`
+    else
+        echo $bHist | grep exit | tr ' ' '\n' | grep TERM | cut -d ':' -f1
+        modelSuccess=1
+    fi
+
+    return $exitCode
+}
+

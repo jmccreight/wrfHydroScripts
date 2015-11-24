@@ -55,7 +55,7 @@ echo -e "Relevant environment variables:"
 henv
 echo 
 
-nudingBranchSet='nudging conusNudging nudgingRebase'
+nudingBranchSet='master tmp nudgingMaster'
 if isInSet $theBranch "$nudingBranchSet"
 then
 
@@ -88,16 +88,16 @@ then
     exit 0
 fi
 
-if [[ $theBranch == "master" ]]
-then
-    echo "Compiling master"
-    echo
-    export PRECIP_DOUBLE=0
-    export WRF_HYDRO_NUDGING=0
-    cleanCompile
-    cp Run/wrf_hydro.exe Run/wrf_hydro.master.exe
-    ls -lah --color=auto Run/wrf_hydro.master.exe
-    exit 0
-fi
+#if [[ $theBranch == "master" ]]
+#then
+#    echo "Compiling master"
+#    echo
+#    export PRECIP_DOUBLE=0
+#    export WRF_HYDRO_NUDGING=0
+#    cleanCompile
+#    cp Run/wrf_hydro.exe Run/wrf_hydro.master.exe
+#    ls -lah --color=auto Run/wrf_hydro.master.exe
+#    exit 0
+#fi
 
 exit 1
