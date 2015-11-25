@@ -37,6 +37,7 @@ then
         mv -f *.LDASOUT_DOMAIN*    $1/.
         mv -f diag_hydro.*         $1/.
         mv -f GW_*.txt             $1/.
+        mv NWIS_gages_not_in_NHD.txt $1/.
 #        mv -f 
     else 
         echo "No such directory: " $1
@@ -53,13 +54,14 @@ else
     rm -f *.LSMOUT_DOMAIN*
     rm -f *.RTOUT_DOMAIN*
     ## I will NOT force remove restarts in case they were purposely write protected.
-    if [[ $removeRestarts -eq 0 ]]; then rm HYDRO_RST.*_DOMAIN*; fi
-    if [[ $removeRestarts -eq 0 ]]; then rm RESTART.*_DOMAIN*; fi
+    if [[ $removeRestarts -eq 0 ]]; then rm -f HYDRO_RST.*_DOMAIN*; fi
+    if [[ $removeRestarts -eq 0 ]]; then rm -f RESTART.*_DOMAIN*; fi
     rm -f frxst_pts_out.txt
     rm -f volrt_accum.txt
     rm -f *.LDASOUT_DOMAIN*
     rm -f diag_hydro.*
     rm -f GW_*.txt
+    rm -f NWIS_gages_not_in_NHD.txt
 fi
 
 exit 0
