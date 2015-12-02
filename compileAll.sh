@@ -41,11 +41,12 @@ function cleanCompile {
     fi
 }
 
+
 ## check branch
 whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
 cd $whmPath/trunk/NDHMS/
 
-theBranch=`git branch | grep '*' | tr -d "*" | tr -d ' '`
+theBranch=`git branch | grep '*' | tr -d "*" | tr -d ' ' | stripColors`
 echo "On Branch: $theBranch"
 
 export WRF_HYDRO=1
@@ -55,8 +56,8 @@ echo -e "Relevant environment variables:"
 henv
 echo 
 
-nudingBranchSet='master tmp nudgingMaster'
-if isInSet $theBranch "$nudingBranchSet"
+nudgingBranchSet='master tmpNudging'
+if isInSet $theBranch "$nudgingBranchSet"
 then
 
     branchTag=''

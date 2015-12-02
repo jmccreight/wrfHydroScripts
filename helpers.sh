@@ -190,3 +190,6 @@ function monitorBsubJob {
     return $exitCode
 }
 
+function stripColors { 
+    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g"
+}

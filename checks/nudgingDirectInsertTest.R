@@ -154,7 +154,6 @@ pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1)
 pairDf$validObs <- 'Invalid Obs'
 pairDf$validObs[which(pairDf$obsQuality > 0)] <- 'Questionable Obs'
 pairDf$validObs[which(pairDf$obsQuality == 100)] <- 'Valid Obs'
-
 cat("\nThe number of observations nudged: ", nrow(pairDf),'\n')
 cat("Quantiles of modeled-observed (errors) for nudging:\n")
 quantile(subset(pairDf, validObs=='Valid Obs')$err, seq(0,1,.1))
