@@ -1,8 +1,20 @@
 suppressPackageStartupMessages(library(rwrfhydro))
 options(warn=1)
+trimws <- function (x, which = c("both", "left", "right")) 
+{
+    which <- match.arg(which)
+    mysub <- function(re, x) sub(re, "", x, perl = TRUE)
+    if (which == "left") 
+        return(mysub("^[ \t\r\n]+", x))
+    if (which == "right") 
+        return(mysub("[ \t\r\n]+$", x))
+    mysub("[ \t\r\n]+$", mysub("^[ \t\r\n]+", x))
+}
+
 ## NOTE that right now the first time in the modeled timeseries is dropped:
 ## this is correct for cold starts. We could distinguish between restarts
 # and cold starts?
+
 
 ## arguments are
 ## 1) runDir
@@ -40,7 +52,7 @@ if(!file.exists(runDir)) {
 ## tau has to be less than NOAH timestep. Can we test if that's true?
 ## Bring in tau from nudgingParams.nc and compare to NOAH_TIMESTEP in namelist.hrldas.
 
-CheckDirectInsert <- function(runDir, parallel=FALSE) {
+CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
   
   #############
   ## identify if frxst pts exists, if not only get model time range
@@ -57,6 +69,7 @@ CheckDirectInsert <- function(runDir, parallel=FALSE) {
     chrtFiles <- list.files(runDir, pattern='CHRTOUT_DOMAIN', full=TRUE)
     if(!length(chrtFiles))
       chrtFiles <- list.files(paste0(runDir,'/VERIFICATION'), pattern='CHRTOUT_DOMAIN', full=TRUE)
+    if(!is.na(modelTail)) chrtFiles <- tail(chrtFiles, modelTail)
     if(!length(chrtFiles))
       warning(paste0("Neither frxst_pts_out.txt nor *CHRTOUT_DOMAIN* files found in ",
                      runDir,' nor in ',runDir,'/VERIFICATION, please check.'),
@@ -150,25 +163,33 @@ CheckDirectInsert <- function(runDir, parallel=FALSE) {
 }
 
 ## get the data
-pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1)
+pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1, modelTail=24)
+pairDf <- within(pairDf,{pctErr=err/obs*100})
 pairDf$validObs <- 'Invalid Obs'
 pairDf$validObs[which(pairDf$obsQuality > 0)] <- 'Questionable Obs'
 pairDf$validObs[which(pairDf$obsQuality == 100)] <- 'Valid Obs'
-
+pairDf$pctErr[which(pairDf$validObs!='Valid Obs')] <- 0
 cat("\nThe number of observations nudged: ", nrow(pairDf),'\n')
 cat("Quantiles of modeled-observed (errors) for nudging:\n")
 quantile(subset(pairDf, validObs=='Valid Obs')$err, seq(0,1,.1))
+cat("Quantiles of (modeled-observed)/observed (% errors) for nudging:\n")
+quantile(subset(pairDf, validObs=='Valid Obs')$pctErr, seq(0,1,.1))
+
 
 if(mkPlot) {
   ## check if the rundir is write protected, write it to ~ if it is.
   suppressPackageStartupMessages(library(ggplot2))
-  ggplot(pairDf, aes(x=obs, y=model)) +
+  ggplot(pairDf, aes(x=obs, y=model, color=pctErr, size=abs(pctErr))) +
     geom_point() +
     geom_abline() +
     facet_wrap(~validObs, ncol=2, scales='free') +
-    theme_bw(base_size=21)
+    theme_bw(base_size=21) +
+    scale_colour_gradientn(colours = rainbow(6)) +
+    scale_size_continuous(range=c(3,6))
 }
 
-retValue <- if(any(abs(subset(pairDf, obs>0)$err)>.001)) 1 else 0
+retValue <- if(any(abs(subset(pairDf, validObs=='Valid Obs')$err)   >.001 | 
+                   abs(subset(pairDf, validObs=='Valid Obs')$pctErr)>2.5 
+                   )) 1 else 0
 
 q(status=retValue)
