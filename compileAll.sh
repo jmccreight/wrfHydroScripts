@@ -7,6 +7,7 @@ source $whsPath/sourceMe.sh
 ## always offline WRF HYDRO
 export WRF_HYDRO=1
 
+
 ## check branch
 whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '` 
 cd $whmPath/trunk/NDHMS/

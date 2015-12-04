@@ -50,4 +50,4 @@ then
     echo -e "\e[46m See make.log \e[0m"
 fi
 
-exit 0
+exit $count
