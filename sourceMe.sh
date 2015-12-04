@@ -78,5 +78,9 @@ function hgrep {
     $whsPath/hgrep.sh $@
 }
 
+function compileTag {
+    $whsPath/compileTag.sh $@
+}
+
 
 return 0
