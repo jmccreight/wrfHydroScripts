@@ -24,23 +24,41 @@ This file specifies the path to this repository on your computer (potentially ot
 assumed to be in this location with this name . E.g. 
 
 > jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
-> wrfHydroScripts=/home/jamesmcc/wrfHydroScripts 
-> ncoScripts=/home/jamesmcc/ncScriptsjamesmcc  
-> wrf_hydro_model=/home/jamesmcc/WRF_Hydro/wrf_hydro_model
+> wrfHydroScripts=/glade/u/home/jamesmcc/wrfHydroScripts
+> ncoScripts=/glade/u/home/jamesmcc/ncoScripts
+> wrf_hydro_model=/glade/u/home/jamesmcc/WRF_Hydro/wrf_hydro_model.
+>
+> #bsubHeader: This regex is used to get the header from this file '^#BSUB'.
+> #            Variables available in bCleanRun: $nCores.
+> #            Double quotes must be escaped.
+> #BSUB -P P48500028                      # Project 99999999
+> #BSUB -x                                # exclusive use of node (not_shared)
+> #BSUB -n $nCores                            # number of total (MPI) tasks
+> #BSUB -R \"span[ptile=16]\"               # run a max of ptile tasks per node
+> #BSUB -J  wh_nudging                    # job name
+> #BSUB -o $theDate.%J.stdout  # output filename
+> #BSUB -e $theDate.%J.stderr  # error filename
+> #BSUB -W 01:00                          # wallclock time (hrs:mins)
+> #BSUB -q premium                        # queue: small, economy, regular, premium
+> #BSUB -B                                # email when the job starts
+> #BSUB -N                                # email when the job finishes
 
-# sourceMe.sh 
-This file is meant to be sourced into a bash shell to give auto-complete (e.g. seemingly in your path) commandline 
-functionality for calling the scripts
+# sourceMe.sh (sourceMe.csh)
+This file is meant to be sourced into a bash (or csh/tcsh) shell to make the scripts seemingly in your path commandline (with auto complete in bash) 
 
 > jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.sh 
+> (in csh: jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.csh)
 
-but better yet, put it in your ~/.bashrc (or ~/.bash_profile, depending on your system).
+but better yet, put it in your ~/.bashrc (~/.cshrc):
 
 > jamesmcc@hydro-c1:~> grep sourceMe ~/.bashrc  
 > source ~/wrfHydroScripts/sourceMe.sh  
 
-Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other 
-shenanigans). 
+For csh:
+> jamesmcc@hydro-c1:~> grep sourceMe ~/.cshrc  
+> source ~/wrfHydroScripts/sourceMe.csh  
+
+Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other shenanigans). 
 
 # ~/.wrfHydroRegressionTests.txt
 For regression testing only. This file specifies where regression test _attempts_ are to be carried out and enumerates "canned" regression tests for
