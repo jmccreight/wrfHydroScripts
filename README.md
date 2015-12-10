@@ -22,7 +22,7 @@ These are listed in order from most critical to least critical.
 # ~/.wrfHydroScripts            
 This file specifies the path to this repository on your computer (potentially other items to be added) and is 
 assumed to be in this location with this name . E.g. 
-
+ 
 > jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
 > wrfHydroScripts=/glade/u/home/jamesmcc/wrfHydroScripts
 > ncoScripts=/glade/u/home/jamesmcc/ncoScripts
