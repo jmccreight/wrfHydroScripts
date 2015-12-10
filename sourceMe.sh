@@ -82,5 +82,9 @@ function compileTag {
     $whsPath/compileTag.sh $@
 }
 
+function geyser {
+    $whsPath/geyser.sh $@
+}
+
 
 return 0

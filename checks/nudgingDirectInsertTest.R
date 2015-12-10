@@ -163,30 +163,52 @@ CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
 }
 
 ## get the data
-pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1, modelTail=24)
+pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1, modelTail=100)
 pairDf <- within(pairDf,{pctErr=err/obs*100})
+
 pairDf$validObs <- 'Invalid Obs'
 pairDf$validObs[which(pairDf$obsQuality > 0)] <- 'Questionable Obs'
 pairDf$validObs[which(pairDf$obsQuality == 100)] <- 'Valid Obs'
 pairDf$pctErr[which(pairDf$validObs!='Valid Obs')] <- 0
 
+invalTag <- paste0('Invalid Obs (n=',length(which(pairDf$validObs=='Invalid Obs')),')')
+pairDf$validObs[which(pairDf$validObs=='Invalid Obs')] <- invalTag
+questTag <- paste0('Questionable Obs (n=',length(which(pairDf$validObs=='Questionable Obs')),')')
+pairDf$validObs[which(pairDf$validObs=='Questionable Obs')] <- questTag
+validTag <- paste0('Valid Obs (n=',length(which(pairDf$validObs=='Valid Obs')),')')
+pairDf$validObs[which(pairDf$validObs=='Valid Obs')] <- validTag
+
 cat("\nThe number of observations nudged: ", nrow(pairDf),'\n')
 cat("Quantiles of modeled-observed (errors) for nudging:\n")
-quantile(subset(pairDf, validObs=='Valid Obs')$err, seq(0,1,.1))
+print(format(quantile(subset(pairDf, validObs==validTag)$err, seq(0,1,.1)),
+                      sci=FALSE), quote=FALSE)
 cat("Quantiles of (modeled-observed)/observed (% errors) for nudging:\n")
-quantile(subset(pairDf, validObs=='Valid Obs')$pctErr, seq(0,1,.1))
+print(format(quantile(subset(pairDf, validObs==validTag)$pctErr, seq(0,1,.1)),
+             sci=FALSE), quote=FALSE)
 
+
+pairDf$validObs <- as.factor(pairDf$validObs)
 
 if(mkPlot) {
   ## check if the rundir is write protected, write it to ~ if it is.
   suppressPackageStartupMessages(library(ggplot2))
-  ggplot(pairDf, aes(x=obs, y=model, color=pctErr, size=abs(pctErr))) +
-    geom_point() +
-    geom_abline() +
-    facet_wrap(~validObs, ncol=2, scales='free') +
+  #png('nudgingScatter_codeFreezeCheck.png',w=11*150,h=8.5*150, pointsize=8)
+  pdf('nudgingScatter_codeFreezeCheck.pdf',w=11*1.2,h=8.5*1.2)
+  ggplot(pairDf) +
+    geom_abline(alpha=.5) +
+    geom_point(data=subset(pairDf, validObs == validTag),
+               aes(x=obs, y=model, color=pctErr, size=abs(pctErr)), shape=4) +
+    geom_point(data=subset(pairDf, validObs!=validTag),
+               aes(x=obs, y=model), shape=4, size=1.5) +
+    facet_wrap(~validObs, scales='free', ncol=3) +
     theme_bw(base_size=21) +
     scale_colour_gradientn(colours = rainbow(6)) +
-    scale_size_continuous(range=c(3,6))
+    scale_size_continuous(range=c(1.5,6)) +
+    coord_fixed(ratio=1) +
+    ggtitle(paste0('Obs vs Nudged:',
+                   paste(format(range(pairDf$POSIXct),'%Y-%m-%d %H:%M'),collapse=' - ')))
+  dev.off()
+  
 }
 
 retValue <- if(any(abs(subset(pairDf, validObs=='Valid Obs')$err)   >.001 | 
