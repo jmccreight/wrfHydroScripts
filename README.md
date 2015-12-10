@@ -28,19 +28,22 @@ assumed to be in this location with this name . E.g.
 > ncoScripts=/home/jamesmcc/ncScriptsjamesmcc  
 > wrf_hydro_model=/home/jamesmcc/WRF_Hydro/wrf_hydro_model
 
-# sourceMe.sh 
-This file is meant to be sourced into a bash shell to give auto-complete (e.g. seemingly in your path) commandline 
-functionality for calling the scripts
+# sourceMe.sh (sourceMe.csh)
+This file is meant to be sourced into a bash (or csh/tcsh) shell to make the scripts seemingly in your path commandline (with auto complete in bash) 
 
 > jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.sh 
+> (in csh: jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.csh)
 
-but better yet, put it in your ~/.bashrc (or ~/.bash_profile, depending on your system).
+but better yet, put it in your ~/.bashrc (~/.cshrc):
 
 > jamesmcc@hydro-c1:~> grep sourceMe ~/.bashrc  
 > source ~/wrfHydroScripts/sourceMe.sh  
 
-Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other 
-shenanigans). 
+For csh:
+> jamesmcc@hydro-c1:~> grep sourceMe ~/.cshrc  
+> source ~/wrfHydroScripts/sourceMe.csh  
+
+Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other shenanigans). 
 
 # ~/.wrfHydroRegressionTests.txt
 For regression testing only. This file specifies where regression test _attempts_ are to be carried out and enumerates "canned" regression tests for
