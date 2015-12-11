@@ -116,9 +116,11 @@ CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
                  st_id=gages[whGages],
                  q_cms=ncdump(chrtFile, 'streamflow',quiet=TRUE)[whGages] )
     modelDf <- plyr::ldply(chrtFiles, GetModeledGages, .parallel=parallel)
+    
   }
- 
 
+
+  
   ## match the obs to the model  
   ## 1) throw out obs which are not on the model times
   obsDf <- subset(obsDf, dateTime %in% modelDf$POSIXct)
@@ -155,7 +157,7 @@ CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
                st_id=dd$st_id[1],
                obs=dd$discharge.cms[which(dd$kind=='obs')],
                obsQuality=dd$quality[which(dd$kind=='obs')],
-               model=dd$discharge.cms[which(dd$kind=='model')])
+               model=dd$discharge.cms[which(dd$kind=='model')], stringsAsFactors=FALSE)
   }
   pairDf <- plyr::ddply(comboDf, plyr::.(st_id, POSIXct), ExtractPair, .parallel=parallel)
   pairDf$err <- pairDf$model - pairDf$obs

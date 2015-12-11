@@ -134,7 +134,7 @@ fi
 theDate=`date '+%Y-%m-%d_%H:%M:%S'`
 nCores=`ls $testRunDir/VERIFICATION/diag_hydro.* | wc -l`
 attemptDir=`grep attemptDir $configFile | cut -d'=' -f2 | tr -d ' '`
-attemptDir=$attemptDir/`basename $theBinary`.${nCores}cores.$theDate.`basename $testDir`
+attemptDir=$attemptDir/`basename $theBinary`.${nCores}cores.`basename $testDir`.$theDate
 
 attemptRunDir=${attemptDir}/`basename $testRunDir`
 if [[ "$testRunDir" == "$testDir" ]] 
