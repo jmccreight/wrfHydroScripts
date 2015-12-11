@@ -52,10 +52,10 @@ then
 fi
 
 ## git-based tagging
-## Master is not tagged with branch name
-##   if on master with no changes since commit
+## Master and "nobranch" are not tagged with branch name
+##   if on master/nobranch with no changes since commit
 ##     wrf_hydro.sha.ENVVAR1-ENVVAR2.exe
-##   if on master with changes since commit
+##   if on master/nobranch with changes since commit
 ##     wrf_hydro.sha+.ENVVAR1-ENVVAR2.exe
 ## Other branches include the branch name
 ##   if on branch with no changes since commit
@@ -72,15 +72,17 @@ whmPath=`grep "wrf_hydro_model" ~/.wrfHydroScripts | cut -d '=' -f2 | tr -d ' '`
 cd $whmPath/trunk/NDHMS/
 theBranch=`git branch | grep '*' | tr -d "*" | tr -d ' ' | stripColors`
 
-if [ $theBranch == 'master' ]; then theBranch=''; else theBranch=${theBranch}.;fi
-    # the env vars
+isInSet $theBranch "master (nobranch)"
+if [ $? -eq 0 ]; then theBranch=''; else theBranch=${theBranch}.;fi
+
+## the env vars
 envVars=`henv | grep '=1' | grep -v 'WRF_HYDRO=1' | cut -d '=' -f1 | tr '\n' '-'`
 lEnvVars=${#envVars}
 envVars=`echo $envVars | cut -c-$((${lEnvVars}-1))`
-    #echo $envVars
+#echo $envVars
 
 tag=${theSha}${theBranch}${envVars}
-    #echo $tag
+#echo $tag
 
 cp Run/wrf_hydro.exe Run/wrf_hydro.${tag}.exe
 ls -lah --color=auto Run/wrf_hydro.${tag}.exe

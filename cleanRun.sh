@@ -69,7 +69,8 @@ while getopts ":fpuncdor" opt; do
       rOpt="-r"
       ;;
     \?)
-      echo "Invalid option: -$OPTARG" >&2
+      echo "Invalid option: -$OPTARG"
+      exit 1
       ;;
   esac
 done
