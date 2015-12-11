@@ -116,9 +116,11 @@ CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
                  st_id=gages[whGages],
                  q_cms=ncdump(chrtFile, 'streamflow',quiet=TRUE)[whGages] )
     modelDf <- plyr::ldply(chrtFiles, GetModeledGages, .parallel=parallel)
+    
   }
- 
 
+
+  
   ## match the obs to the model  
   ## 1) throw out obs which are not on the model times
   obsDf <- subset(obsDf, dateTime %in% modelDf$POSIXct)
@@ -155,7 +157,7 @@ CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
                st_id=dd$st_id[1],
                obs=dd$discharge.cms[which(dd$kind=='obs')],
                obsQuality=dd$quality[which(dd$kind=='obs')],
-               model=dd$discharge.cms[which(dd$kind=='model')])
+               model=dd$discharge.cms[which(dd$kind=='model')], stringsAsFactors=FALSE)
   }
   pairDf <- plyr::ddply(comboDf, plyr::.(st_id, POSIXct), ExtractPair, .parallel=parallel)
   pairDf$err <- pairDf$model - pairDf$obs
@@ -163,7 +165,9 @@ CheckDirectInsert <- function(runDir, parallel=FALSE, modelTail=NA) {
 }
 
 ## get the data
-pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1, modelTail=24)
+pairDf <- CheckDirectInsert(runDir, parallel=nCores > 1)
+                            #routeLink <- "/home/jamesmcc/WRF_Hydro/TESTING/TESTS/FRNG_NUDGING_15Min_LONG_16Cores/DOMAIN/Route_Link_2.pmo100ObsTest.nc")
+                                        #, modelTail=24)
 pairDf <- within(pairDf,{pctErr=err/obs*100})
 pairDf$validObs <- 'Invalid Obs'
 pairDf$validObs[which(pairDf$obsQuality > 0)] <- 'Questionable Obs'
@@ -172,9 +176,11 @@ pairDf$pctErr[which(pairDf$validObs!='Valid Obs')] <- 0
 
 cat("\nThe number of observations nudged: ", nrow(pairDf),'\n')
 cat("Quantiles of modeled-observed (errors) for nudging:\n")
-quantile(subset(pairDf, validObs=='Valid Obs')$err, seq(0,1,.1))
+print(format(quantile(subset(pairDf, validObs=='Valid Obs')$err, seq(0,1,.1)),
+             sci=FALSE), quote=FALSE)
 cat("Quantiles of (modeled-observed)/observed (% errors) for nudging:\n")
-quantile(subset(pairDf, validObs=='Valid Obs')$pctErr, seq(0,1,.1))
+print(format(quantile(subset(pairDf, validObs=='Valid Obs')$pctErr, seq(0,1,.1), na.rm=TRUE),
+       sci=FALSE), quote=FALSE)
 
 
 if(mkPlot) {

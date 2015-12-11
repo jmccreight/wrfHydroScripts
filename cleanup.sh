@@ -37,7 +37,7 @@ then
         mv -f *.LDASOUT_DOMAIN*    $1/.
         mv -f diag_hydro.*         $1/.
         mv -f GW_*.txt             $1/.
-        mv NWIS_gages_not_in_NHD.txt $1/.
+        mv NWIS_gages_not_in_RLAndParams.txt $1/.
 #        mv -f 
     else 
         echo "No such directory: " $1
@@ -61,7 +61,7 @@ else
     rm -f *.LDASOUT_DOMAIN*
     rm -f diag_hydro.*
     rm -f GW_*.txt
-    rm -f NWIS_gages_not_in_NHD.txt
+    rm -f NWIS_gages_not_in_RLAndParams.txt
 fi
 
 exit 0
