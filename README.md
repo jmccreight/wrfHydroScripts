@@ -23,45 +23,70 @@ These are listed in order from most critical to least critical.
 This file specifies the path to this repository on your computer (potentially other items to be added) and is 
 assumed to be in this location with this name . E.g. 
 
-> jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
-> wrfHydroScripts=/home/jamesmcc/wrfHydroScripts 
-> ncoScripts=/home/jamesmcc/ncScriptsjamesmcc  
-> wrf_hydro_model=/home/jamesmcc/WRF_Hydro/wrf_hydro_model
+``` 
+jamesmcc@hydro-c1:~> cat ~/.wrfHydroScripts  
+wrfHydroScripts=/glade/u/home/jamesmcc/wrfHydroScripts
+ncoScripts=/glade/u/home/jamesmcc/ncoScripts
+wrf_hydro_model=/glade/u/home/jamesmcc/WRF_Hydro/wrf_hydro_model.
 
-# sourceMe.sh 
-This file is meant to be sourced into a bash shell to give auto-complete (e.g. seemingly in your path) commandline 
-functionality for calling the scripts
+#bsubHeader: This regex is used to get the header from this file '^#BSUB'.
+#            Variables available in bCleanRun: $nCores.
+#            Double quotes must be escaped.
+#BSUB -P P48500028                      # Project 99999999
+#BSUB -x                                # exclusive use of node (not_shared)
+#BSUB -n $nCores                            # number of total (MPI) tasks
+#BSUB -R \"span[ptile=16]\"               # run a max of ptile tasks per node
+#BSUB -J  wh_nudging                    # job name
+#BSUB -o $theDate.%J.stdout  # output filename
+#BSUB -e $theDate.%J.stderr  # error filename
+#BSUB -W 01:00                          # wallclock time (hrs:mins)
+#BSUB -q premium                        # queue: small, economy, regular, premium
+#BSUB -B                                # email when the job starts
+#BSUB -N                                # email when the job finishes
+```
+# sourceMe.sh (sourceMe.csh)
+This file is meant to be sourced into a bash (or csh/tcsh) shell to make the scripts seemingly in your path commandline (with auto complete in bash) 
 
-> jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.sh 
+```
+jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.sh 
+(in csh: jamesmcc@hydro-c1:~> source ~jamesmcc/wrfHydroScripts/sourceMe.csh)
+```
+but better yet, put it in your ~/.bashrc (~/.cshrc):
 
-but better yet, put it in your ~/.bashrc (or ~/.bash_profile, depending on your system).
+```
+jamesmcc@hydro-c1:~> grep sourceMe ~/.bashrc  
+source ~/wrfHydroScripts/sourceMe.sh  
+```
 
-> jamesmcc@hydro-c1:~> grep sourceMe ~/.bashrc  
-> source ~/wrfHydroScripts/sourceMe.sh  
+For csh:
+```
+jamesmcc@hydro-c1:~> grep sourceMe ~/.cshrc  
+source ~/wrfHydroScripts/sourceMe.csh  
+```
 
-Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other 
-shenanigans). 
+Note you'll still have to source sourceMe.sh in qsub scripts when you want to pick these up (unless you perform other shenanigans). 
 
 # ~/.wrfHydroRegressionTests.txt
 For regression testing only. This file specifies where regression test _attempts_ are to be carried out and enumerates "canned" regression tests for
 interactive selection during the script.
 
-> jamesmcc@hydro-c1:~> cat ~/.wrfHydroRegressionTests.txt  
-> attemptDir = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/ATTEMPTS  
->   
-> *** Regression Tests Menu  
-> 1: Boulder Creek 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD  
-> 2: Boulder Creek NLDAS forcing 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD_NLDAS  
-> 3: Front Range   4D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD  
-> 4: Front Range   6H NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD_6HR  
-> *** Regression Tests Menu   
->   
->     
-> *** testNLast Menu - currently this menu is to be comment selected, opt out = # at start  
-> 1: testNaOutput   : fails if there are nans in any variable in the file  
-> 2: testDiffOutput : test fails if there are non-zero differences with verification output  
-> *** testNLast Menu  
-
+```
+jamesmcc@hydro-c1:~> cat ~/.wrfHydroRegressionTests.txt  
+attemptDir = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/ATTEMPTS  
+  
+*** Regression Tests Menu  
+1: Boulder Creek 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD  
+2: Boulder Creek NLDAS forcing 1D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/Boulder_Creek_NHD_NLDAS  
+3: Front Range   4D NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD  
+4: Front Range   6H NHD Master = /home/jamesmcc/WRF_Hydro/TESTING/REGRESSION/TESTS/FRNG_NHD_6HR  
+*** Regression Tests Menu   
+  
+    
+*** testNLast Menu - currently this menu is to be comment selected, opt out = # at start  
+1: testNaOutput   : fails if there are nans in any variable in the file  
+2: testDiffOutput : test fails if there are non-zero differences with verification output  
+*** testNLast Menu  
+```
 # Usage tips
 
 * One of the more complicated scripts that creates copies and/or links on your computer is __linkToTestCase__.   

@@ -15,12 +15,51 @@ function checkExist {
 }
 
 
-function notCommented {
-    ## assumes that ! is the comment... could make that an argument.
-    noBlank=`echo $1 | tr -d ' '`
-    if [[ $noBlank == !* ]]; then return 1; else return 0; fi
+function commented {
+    # options w args
+    # -c commentChar
+    # -e commentException exception string, starts with commentChar or commentChar is added to its start
+    local OPTIND
+    local commentChar commentException
+    commentChar=!
+    commentException='!'  ## equal to commentChar does nothing
+    while getopts ":c:e:" opt; do
+        case $opt in
+            c)  commentChar="${OPTARG}"
+                commentException=$commentChar;;
+            e)  commentException="${OPTARG}";;
+            \?) echo "Invalid option: -$OPTARG";;
+        esac
+    done
+    shift "$((OPTIND-1))" # Shift off the options and optional
+    
+    if [ ${#commentChar} -gt 1 ]
+    then
+        commentChar=`echo $commentChar | cut -c1`
+        echo "Supplied comment character longer than length 1, using the first character: $commentChar"
+    fi
+
+    local firstCE=`echo $commentException | cut -c1`
+    if [ ! $firstCE == $commentChar ]
+    then
+        commentException="${commentChar}${commentException}"
+        echo "comment exception string does not begin with the comment character, prepending it: $commentException"
+    fi
+
+    local noBlank=`echo $1 | tr -d ' '`
+    if [[ ! $commentChar == $commentException ]]
+    then
+        if [[ $noBlank == "$commentException"* ]]; then return 1; else return 0; fi
+    fi
+    if [[ $noBlank == "$commentChar"* ]]; then return 0; else return 1; fi
 }
 
+function notCommented {
+    commented "$@"
+    local retVal=$?
+    if [ $retVal -eq 0 ]; then return 1; fi
+    if [ ! $retVal -eq 0 ]; then return 0; fi
+}
 
 function getAbsPath {
     ## usage: file=`getAbsPath $file`
@@ -29,8 +68,8 @@ function getAbsPath {
 
 
 function checkBinary {
-    theBinary=$1
-    message="$2"
+    local theBinary=$1
+    local message="$2"
     if [[ -z $theBinary ]]; then echo -e "\e[31mNo binary supplied, returning.\e[0m"; return 1; fi
     if [[ ! -e $theBinary ]] 
     then
@@ -38,7 +77,7 @@ function checkBinary {
         if [[ ! -z "$message" ]]; then echo -e "$message"; fi
         return 1
     fi
-    checkBinary=`ldd $theBinary`
+    local checkBinary=`ldd $theBinary`
     if [ ! $? -eq 0 ] 
     then
         echo -e "\e[31mProblems with executable:\e[0m $theBinary"
@@ -53,11 +92,11 @@ function getMenu {
     if [ -z $1 ]; then echo -e "\e[31mgetMenu requires its first arg to be a config file.\e[0m"; fi
     if [ -z "$2" ]; then echo -e "\e[31mgetMenu requires its second arg to be a menu name.\e[0m"; fi
     if [ -z $1 ] | [ -z "$2" ]; then return 1; fi
-    configFile=$1
-    menuName=$2
+    local configFile=$1
+    local menuName=$2
     checkExist $configFile || return 1
-    whMenu=(`grep -n "$menuName" $configFile | cut -d ':' -f1`)
-    nMenu="${#whMenu[@]}"
+    local whMenu=(`grep -n "$menuName" $configFile | cut -d ':' -f1`)
+    local nMenu="${#whMenu[@]}"
     if [[ $nMenu -ne 2 ]]; then 
         if [[ $nMenu -eq 0 ]]; then 
             echo -e "\e[31mmenu name was not found in config file: $configFile\e[0m"
@@ -66,7 +105,7 @@ function getMenu {
         fi
         return 1
     fi
-    nItems=$((${whMenu[1]}-${whMenu[0]}-1))
+    local nItems=$((${whMenu[1]}-${whMenu[0]}-1))
     head -$((${whMenu[1]}-1)) $configFile | tail -${nItems}
     return 0
 }
@@ -77,27 +116,29 @@ function isInSet {
     # fruit='orange bannana apple'
     # isMember [grep options] apple "$fruit"
     # Same exact options as grep, mostly focused on -i for case matching.
-    nArgs=$#
-    set="${@:$nArgs}"
-    opts="${@:1:$(($nArgs-2))}"
-    member="${@:$(($nArgs-1)):1}"
+    local nArgs=$#
+    local set="${@:$nArgs}"
+    local opts="${@:1:$(($nArgs-2))}"
+    local member="${@:$(($nArgs-1)):1}"
     #echo set: "$set"
     #echo opts: "$opts"
     #echo member?: "$member"
-    set=`echo "$set" | tr ' ' '\n'`
-    setSize=`echo "$set" | wc -l`
+    local set=`echo "$set" | tr ' ' '\n'`
+    local setSize=`echo "$set" | wc -l`
     if [[ $setSize -le 1 ]] 
     then
-        echo "The passed set only has one member, you likely forgot the double quotes on the set variable"
+        echo "Warning: The set only has one member."
+        echo "You may have forgoten double quotes on the set variable."
+        if [ $member == $set ]; then return 0; fi
         return 1
     fi
     for ss in $set
     do
         if [ -z $opts ] 
         then
-            result=`echo $ss | grep "^$member$"`
+            local result=`echo $ss | grep "^$member$"`
         else 
-            result=`echo $ss | grep "$opts" "^$member$"`
+            local result=`echo $ss | grep "$opts" "^$member$"`
         fi
         if [ ! -z "$result" ]; then return 0; fi
     done
@@ -109,8 +150,8 @@ round() {
     # $1 is expression to round (should be a valid bc expression)
     # $2 is number of decimal figures (optional). Defaults to three if none given
     [ ! -z $1 ] || return 1
-    scale=${#1}
-    in=`echo "scale=$scale;$1" | bc`
+    local scale=${#1}
+    local in=`echo "scale=$scale;$1" | bc`
     local df=${2:-$scale}
     printf '%.*f\n' "$df" "$(bc -l <<< "a=$in; if(a>0) a+=5/10^($df+1) else if (a<0) a-=5/10^($df+1); scale=$df; a/1")"
     return 0
@@ -120,14 +161,14 @@ round() {
 ceiling() {
     # $1 is expression to ceiling (should be a valid bc expression)
     [ !  -z $1 ] || return 1
-    scale=${#1}
-    in=`echo "scale=$scale;$1" | bc`
+    local scale=${#1}
+    local in=`echo "scale=$scale;$1" | bc`
     #echo in $in
-    inRound=`round $in 0`
-    isInteger=`echo "$in == $inRound" | bc`
+    local inRound=`round $in 0`
+    local isInteger=`echo "$in == $inRound" | bc`
     if [[ $isInteger -eq 1 ]]; then echo $inRound; return 0; fi
-    diff=`echo $inRound - $in | bc`
-    roundUp=`echo "$diff >= 0" | bc`
+    local diff=`echo $inRound - $in | bc`
+    local roundUp=`echo "$diff >= 0" | bc`
     if [[ $roundUp -eq 1 ]] 
     then 
         echo $inRound
@@ -200,14 +241,16 @@ function errGrep {
 
 
 function setHenv {
+    local R N D P O
     R=0; N=0; D=0; P=0; O=0
-    while getopts ":R:N:D:P:O" opt; do
+    local OPTIND
+    while getopts ":RNDPO" opt; do
         case $opt in
-            R) R=1;;
-            N) N=1;;
-            D) D=1;;
-            P) P=1;;
-            O) O=1;;
+            R)  R=1;;
+            N)  N=1;;
+            D)  D=1;;
+            P)  P=1;;
+            O)  O=1;;
             \?) echo "Invalid option: -$OPTARG";;
         esac
     done

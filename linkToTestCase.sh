@@ -141,19 +141,14 @@ fi
 ## Run dir stuff
 # these things have to be in the run directory
 echo -e "\e[7mRun Directory Files:\e[0m"
-TBLS=`ls --color=auto $sourceDir/*TBL`
+TBLS=`ls --color=auto $sourceDir/*TBL 2>/dev/null`
+if [ -z $TBLS ]; then TBLS=`ls --color=auto $sourceDir/PARAMS/*TBL`; fi
 namelists=`ls --color=auto $sourceDir/namelist.hrldas $sourceDir/hydro.namelist`
 if [[ $"getNudgingFiles" -eq 0 ]]
 then
     nudgeDirs=`ls -d $sourceDir/nudgingTimeSliceObs`
-    nudgeFiles="$nudgeDirs "`ls $sourceDir/nudgingParams.nc`
-    ## This one is definitely going to move into namelist and evnetually get picked up in the 
-    ## next section
-    nudgeFiles="$nudgeFiles "`ls $sourceDir/netwkReExFile.nc`
-    nudgeDirs="$nudgeDirs alksdjfoijweflksjdflakjdsfalkdsfjfniufehg"  ## this is literally a fake out to us isInSet
 else 
     nudgeDirs=''
-    nudgeFiles=''
 fi
 echo $namesInFile
 
@@ -161,7 +156,7 @@ if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $targetDir/; fi
 if [[ $unWriteProtect -eq 0 ]]; then chmod 755 $targetDir/*; fi
 
 cd $targetDir
-for ii in $namelists $TBLS $nudgeFiles
+for ii in $namelists $TBLS $nudgeDirs
 do
     theSource=$ii
     #since all targets go in targetDir
@@ -177,7 +172,7 @@ do
             ## the nudging observation files require -o to force copy
             if [[ $getNudgingFiles -eq 0 ]] 
             then
-                isInSet "$theSource" "$nudgeDirs"
+                isInSet "$theSource" "$nudgeDirs" 2>/dev/null
                 test0=$?
             else 
                 test0=1
