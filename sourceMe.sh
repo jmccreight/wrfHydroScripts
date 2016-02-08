@@ -15,7 +15,7 @@ fi
 whsPath=`grep "wrfHydroScripts" $configFile | cut -d '=' -f2 | tr -d ' '` 
 
 function henv {
-    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME)" | egrep -v PWD
+    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME|SOIL)" | egrep -v PWD
 }
 
 function lrl { ## "list readlink"

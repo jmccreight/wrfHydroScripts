@@ -13,7 +13,7 @@ endif
 
 set whsPath=`grep "wrfHydroScripts" $configFile | cut -d '=' -f2 | tr -d ' '` 
 
-alias henv 'printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME)" | egrep -v PWD'
+alias henv 'printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME|SOIL)" | egrep -v PWD'
 
 alias hgrep '$whsPath/hgrep.sh'
 
