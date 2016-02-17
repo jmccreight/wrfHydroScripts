@@ -12,7 +12,9 @@ bCleanRun :: help
 Purpose: submit cleanRun calls to bsub automatically 
 
 Arguments: those for cleanRun - see below.
-Options: -j 'jobName' - used in forming the bsubHeader. (must come before args)
+Options: 
+-j jobName - used in forming the bsubHeader. (must come before args)
+-e path/exitScript - a script to be invoked prior to successful exit.
 
 Details:
 Assumes the jobs run dir is the current dir, where the binary is found.
@@ -30,9 +32,10 @@ then
     exit 1
 fi
 
-while getopts "::fpuncdorj:" opt; do
+while getopts "::fpuncdorj:e:" opt; do
     case $opt in
         j) jobName="${OPTARG}" ;;
+        e) exitScript="${OPTARG}" ;;
     esac 
 done
 shift "$((OPTIND-1))" # Shift off the option
@@ -45,6 +48,12 @@ nNodes=`ceiling $nCores/16`
 if [ -z $jobName ]; then jobName=myRun; fi
 echo $nCores
 echo $jobName
+if [ ! -z $exitScript ]
+then
+    exitScript="./${exitScript}"
+    echo Exit script: "$exitScript"
+fi
+
 
 ## check valid options
 while getopts "::fpuncdor" opt; do
@@ -81,6 +90,9 @@ modelReturn=\$?
 unset cleanRunDateId
 
 echo \"model return: \$modelReturn\"
+
+$exitScript
+
 exit \$modelReturn" > $jobFile
 
 bsub < $jobFile

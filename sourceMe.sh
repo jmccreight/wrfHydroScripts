@@ -14,10 +14,6 @@ fi
 
 whsPath=`grep "wrfHydroScripts" $configFile | cut -d '=' -f2 | tr -d ' '` 
 
-function henv {
-    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME|SOIL)" | egrep -v PWD
-}
-
 function lrl { ## "list readlink"
     for i in "$@"
     do
@@ -86,5 +82,46 @@ function geyser {
     $whsPath/geyser.sh $@
 }
 
+function henv {
+    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME|SOIL)" | egrep -v PWD
+}
+
+function setHenv {
+    local R N D P O S
+    R=0; N=0; D=0; P=0; O=0; S=0
+    local OPTIND
+    while getopts ":RNDPOS" opt; do
+        case $opt in
+            R)  R=1;;
+            N)  N=1;;
+            D)  D=1;;
+            P)  P=1;;
+            O)  O=1;;
+            S)  S=1;;
+            \?) echo "Invalid option: -$OPTARG";;
+        esac
+    done
+    shift "$((OPTIND-1))" # Shift off the options and optional
+
+    export HYDRO_REALTIME=0
+    export WRF_HYDRO_NUDGING=0
+    export HYDRO_D=0
+    export PRECIP_DOUBLE=0
+    export OUTPUT_CHAN_CONN=0
+    export WRF_HYDRO=1
+    export SPATIAL_SOIL=0
+
+    if [ $R -eq 1 ]; then export HYDRO_REALTIME=1; fi
+    if [ $N -eq 1 ]; then export WRF_HYDRO_NUDGING=1; fi
+    if [ $D -eq 1 ]; then export HYDRO_D=1; fi
+    if [ $P -eq 1 ]; then export PRECIP_DOUBLE=1; fi
+    if [ $O -eq 1 ]; then export OUTPUT_CHAN_CONN=1; fi
+    if [ $S -eq 1 ]; then export SPATIAL_SOIL=1; fi
+    henv
+}
+
+function checkAllocations {
+    $whsPath/checkAllocations.sh $@
+}
 
 return 0
