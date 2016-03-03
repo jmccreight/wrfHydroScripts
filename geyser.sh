@@ -1,13 +1,32 @@
 #!/bin/bash
 
+help='
+geyser.sh
+
+At least one option must be specified. 
+
+Options: 
+-j job name.          default = myJob
+-n # cores.           default = 8
+-w wall time          default = 24:00
+-d Run with defaults.
+-h This help message.
+'
+
+if [ -z $@ ]; then
+    echo "$help"
+    exit 0
+fi
+
 jobName=myJob
 nCores=8
 wallTime=24:00
-while getopts "::n:j:w:" opt; do
+while getopts "::n:j:w:hd" opt; do
     case $opt in
         j) jobName="${OPTARG}" ;;
         n) nCores="${OPTARG}" ;;
         w) wallTime="${OPTARG}" ;;
+        h) echo "$help"; exit 0 ;;
     esac 
 done
 shift "$((OPTIND-1))" # Shift off the option

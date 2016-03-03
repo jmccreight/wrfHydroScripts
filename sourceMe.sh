@@ -83,14 +83,14 @@ function geyser {
 }
 
 function henv {
-    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort|REALTIME|SOIL)" | egrep -v PWD
+    printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|REALTIME|SOIL|WRFIO)" | egrep -v PWD
 }
 
 function setHenv {
     local R N D P O S
     R=0; N=0; D=0; P=0; O=0; S=0
     local OPTIND
-    while getopts ":RNDPOS" opt; do
+    while getopts ":RNDPOSL" opt; do
         case $opt in
             R)  R=1;;
             N)  N=1;;
@@ -98,6 +98,7 @@ function setHenv {
             P)  P=1;;
             O)  O=1;;
             S)  S=1;;
+            L)  L=1;;
             \?) echo "Invalid option: -$OPTARG";;
         esac
     done
@@ -110,6 +111,7 @@ function setHenv {
     export OUTPUT_CHAN_CONN=0
     export WRF_HYDRO=1
     export SPATIAL_SOIL=0
+    export WRFIO_NCD_LARGE_FILE_SUPPORT=0
 
     if [ $R -eq 1 ]; then export HYDRO_REALTIME=1; fi
     if [ $N -eq 1 ]; then export WRF_HYDRO_NUDGING=1; fi
@@ -117,6 +119,7 @@ function setHenv {
     if [ $P -eq 1 ]; then export PRECIP_DOUBLE=1; fi
     if [ $O -eq 1 ]; then export OUTPUT_CHAN_CONN=1; fi
     if [ $S -eq 1 ]; then export SPATIAL_SOIL=1; fi
+    if [ $L -eq 1 ]; then export WRFIO_NCD_LARGE_FILE_SUPPORT=1; fi
     henv
 }
 
