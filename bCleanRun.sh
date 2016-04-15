@@ -14,8 +14,9 @@ Purpose: submit cleanRun calls to bsub automatically
 Arguments: those for cleanRun - see below.
 Options: 
 -j jobName - used in forming the bsubHeader. (must come before args)
--e path/exitScript - a script to be invoked prior to successful exit.
 -W wallTime
+-q queue
+-e path/exitScript - a script to be invoked prior to successful exit.
 Details:
 Assumes the jobs run dir is the current dir, where the binary is found.
 Header items to qsub may need adjusted on an individual basis in ~/.wrfHydroScripts

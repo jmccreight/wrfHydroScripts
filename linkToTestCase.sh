@@ -240,8 +240,23 @@ function linkReqFiles {
             if [[ $linkOrCopy == 'link' ]] 
             then
                 ## remove symlinks before replacing them, esp for directories
-                if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
-                ln -s `readlink -e $sourceDir/$thePath/$theFile` $targetDir/$thePath/$theFile
+                if [[ $nlstItem == RESTART_FILENAME_REQUESTED ]] || \
+                    [[ $nlstItem == RESTART_FILE ]]
+                then
+                    if [[ -h $targetDir/$thePath ]]; then rm -rf $targetDir/$thePath; fi
+                    if [[ ! -e $targetDir/$thePath ]]; then mkdir $targetDir/$thePath; fi
+                    for rr in `ls $sourceDir/$thePath/$theFile*`
+                    ## do loop gets all binary restarts
+                    do
+                        ln -s `readlink -e $rr` $targetDir/$thePath/.
+                    done
+                    echo "# restarts $targetDir/$thePath/${theFile}*" \
+                           `ls -1 $targetDir/$thePath/$theFile* | wc -l`
+                else 
+                    if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
+                    ln -s `readlink -e $sourceDir/$thePath/$theFile` $targetDir/$thePath/$theFile
+                    ls -dl --color=auto $targetDir/$thePath/$theFile
+                fi
             else 
                 ## Either: require -f flag to force copy of forcings, otherwise always link them
                 [[ $nlstItem == "INDIR" ]] && [[ $linkForc -eq 0 ]]
@@ -260,9 +275,9 @@ function linkReqFiles {
                     if [[ -h $targetDir/$thePath/$theFile ]]; then rm $targetDir/$thePath/$theFile; fi
                     cp -rL $sourceDir/$thePath/$theFile $targetDir/$thePath/$theFile
                 fi
+                ls -dl --color=auto $targetDir/$thePath/$theFile
             fi
             if [[ $writeProtect -eq 0 ]]; then chmod 555 $targetDir/$thePath/$theFile; fi
-            ls -dl --color=auto $targetDir/$thePath/$theFile
         done
     done
     return 0
