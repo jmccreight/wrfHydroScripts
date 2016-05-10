@@ -32,17 +32,19 @@ wrf_hydro_model=/glade/u/home/jamesmcc/WRF_Hydro/wrf_hydro_model.
 #bsubHeader: This regex is used to get the header from this file '^#BSUB'.
 #            Variables available in bCleanRun: $nCores.
 #            Double quotes must be escaped.
-#BSUB -P P48500028                      # Project 99999999
+##BSUB -P P48500028                      # Project 99999999
+#BSUB -P NRAL0008                        # Project 99999999
 #BSUB -x                                # exclusive use of node (not_shared)
 #BSUB -n $nCores                            # number of total (MPI) tasks
 #BSUB -R \"span[ptile=16]\"               # run a max of ptile tasks per node
-#BSUB -J  wh_nudging                    # job name
+#BSUB -J $jobName                       # job name
 #BSUB -o $theDate.%J.stdout  # output filename
 #BSUB -e $theDate.%J.stderr  # error filename
-#BSUB -W 01:00                          # wallclock time (hrs:mins)
-#BSUB -q premium                        # queue: small, economy, regular, premium
+#BSUB -W $wallTime                      # wallclock time (hrs:mins)
+#BSUB -q $queue                         # queue: small, economy, regular, premium
 #BSUB -B                                # email when the job starts
 #BSUB -N                                # email when the job finishes
+
 ```
 # sourceMe.sh (sourceMe.csh)
 This file is meant to be sourced into a bash (or csh/tcsh) shell to make the scripts seemingly in your path commandline (with auto complete in bash) 
