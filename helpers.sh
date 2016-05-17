@@ -114,7 +114,7 @@ function getMenu {
 function isInSet {
     # usage: 
     # fruit='orange bannana apple'
-    # isMember [grep options] apple "$fruit"
+    # isInSet [grep options] apple "$fruit"
     # Same exact options as grep, mostly focused on -i for case matching.
     local nArgs=$#
     local set="${@:$nArgs}"

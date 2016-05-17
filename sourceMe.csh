@@ -45,4 +45,9 @@ alias compileTag '$whsPath/compileTag.sh'
 
 alias geyser '$whsPath/geyser.sh'
 
+alias r2Geyser '$whsPath/r2Geyser.sh'
+
+alias getScratchDates '$whsPath/getScratchDates.sh'
+
+
 exit  0

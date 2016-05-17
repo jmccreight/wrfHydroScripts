@@ -127,4 +127,13 @@ function checkAllocations {
     $whsPath/checkAllocations.sh $@
 }
 
+function getScratchDates {
+    $whsPath/getScratchDates.sh $@
+}
+
+function r2Geyser {
+    $whsPath/r2Geyser.sh $@
+}
+
+
 return 0
